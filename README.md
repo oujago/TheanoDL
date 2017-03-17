@@ -10,15 +10,14 @@ How many layers? What hyperparameters of each layer?
 
 So, there should be _eight classes_ to manage the execution of every task, as shown in the following figure.
 
-[figure1]: /doc/pics/p1.png "eight_classes"
-![eight classes][figure1]
+![eight classes](doc/pics/p1.png)
 
 But, if we manage the parameters within each component by using same interface, we just need _four classes_ 
 to perform an AI task.
 
 [figure2]: /doc/pics/p2.png "four_classes"
 
-![four classes][figure2]
+![four classes](doc/pics/p2.png)
 
 More importantly, in every task, **_the operation flow is unchanged_** and **_the only changing 
 things are just the specific content in each operation_**. Thus, our deep learning framework 
