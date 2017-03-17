@@ -63,16 +63,6 @@ class W2VGet:
         self.w2v_dim = w2v_dim
 
         if w2v_type.lower() == 'google':
-            # self.w2v_idx = pickle_load(W2VPath.google_300_idx_path)
-            # self.w2v_data_file = open(W2VPath.google_300_data_path, 'rb')
-            # if sys.platform == 'win32':
-            #     self.vec_len = 3302
-            # elif platform.node().lower() == 'bdi4-server':
-            #     self.vec_len = 3301
-            # elif platform.node().lower() == 'chaoming-pc':
-            #     self.vec_len = 3302
-            # else:
-            #     raise ValueError()
             pkl_w2v_type, pkl_w2v_dim, self.vec_len, self.w2v_idx = pickle_load(W2VPath.google_300_idx_path)
             self.w2v_data_file = open(W2VPath.google_300_data_path, 'rb')
 
