@@ -18,8 +18,9 @@ to perform an AI task.
 ![four classes](doc/pics/p2.PNG)
 
 More importantly, in every task, **_the operation flow is unchanged_** and **_the only changing 
-things are just the specific content in each operation_**. Thus, our deep learning framework 
-is born under the surpervision of this idea.
+thing is just the specific content in each operation_**. Thus, our deep learning framework 
+is born under the surpervision of this idea. The operation flow is shown in
+[thdl/classify_framework.py](thdl/classify_framework.py)
 
 # Advantages
 
@@ -28,5 +29,10 @@ library. We encapsulate commonly used models such as SimpleRNN, GRU, LSTM, CNN, 
 variants of LSTM. Our framework is flexible and convenient. The most important thing is that my framework 
 **supports the visualization of evaluation results**, such as accuracy and loss.
 
+# Usage
 
+
+
+
+# Example
 

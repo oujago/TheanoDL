@@ -3,25 +3,19 @@
 """
 @author: ChaoMing (www.oujago.com)
 
-@date: Created on 2016/11/15
+@date: Created on 2017/3/17
 
 @notes:
-    The most important change in the version 2 is :
-        every important class doesn't need extra class to store, record its parameters.
-        every class should implements its own 'to_json' methods.
+    
 """
 
 import os
 import sys
-import time
-from collections import Counter
 
 import matplotlib
 import numpy as np
 
-from .common import check_duplicate_path
-from .common import time_format
-from .nlp_data import yield_item
+from ..common import check_duplicate_path
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -104,6 +98,7 @@ class EvalCls:
 
 
     """
+
     def __init__(self, index2tag,
                  metrics=('macro_acc', 'macro_recall', 'macro_f1', 'micro_acc'),
                  aspects=('training', 'trained', 'valid', 'test'),
@@ -140,7 +135,7 @@ class EvalCls:
 
         # get evaluation metric index
         if type(metrics).__name__ == 'str':
-            metrics = (metrics, )
+            metrics = (metrics,)
 
         i, micro, metrics = 0, False, list(metrics)
         while i < len(metrics):
@@ -187,7 +182,7 @@ class EvalCls:
             # if a == 0:
             #     return 1.
             # else:
-                return 0.
+            return 0.
         else:
             return a / b
 
@@ -243,7 +238,7 @@ class EvalCls:
         res_matrix[-1, :] = EvalCls.divide(np.sum(np.diag(confusion_matrix)), np.sum(confusion_matrix))
 
         return res_matrix
-    
+
     @staticmethod
     def print_matrix(matrix, rows, columns, file=sys.stdout):
         """
@@ -311,13 +306,14 @@ class EvalCls:
         self.add_history_evaluation_matrix(history_name, aspect, evaluation_mat)
         self.add_history_loss(history_name, aspect, loss)
 
-    def output_epoch(self, history_name, epoch, end ='; ', file=sys.stdout):
+    def output_epoch(self, history_name, epoch, end='; ', file=sys.stdout):
         """ Output the loss and the evaluations on one epoch """
         # epoch
         epoch_runout = 'epoch %d' % epoch
         runout = epoch_runout + end
         # loss
-        loss_runout = ["%s:%.4f" % (key, value[epoch]) for key, value in sorted(self.history_losses[history_name].items())]
+        loss_runout = ["%s:%.4f" % (key, value[epoch]) for key, value in
+                       sorted(self.history_losses[history_name].items())]
         runout += "loss-[%s]; " % (" ".join(loss_runout))
         # aspects
         for aspect in self.aspects:
@@ -364,7 +360,7 @@ class EvalCls:
         :param file:
         """
         output_lines = []
-        
+
         # blank line
         output_lines.append("")
         # split line
@@ -384,7 +380,7 @@ class EvalCls:
             evaluation_mat, self.index2tag + ['macro', 'micro'], ('Precision', 'Recall', 'F1')))
         # return
         return output_lines
-    
+
     def print_runout_history_metric(self, history_aspect_all_output_lines, file=sys.stdout):
         maxlen = max([len(line) for output_lines in history_aspect_all_output_lines for line in output_lines]) + 1
 
@@ -476,7 +472,7 @@ class EvalCls:
         # save figure
         plt.savefig(check_duplicate_path(filename))
         plt.close()
-    
+
     def plot_history_evaluations(self, filename, metrics=None, mark_best=False):
         # metrics
         if metrics is None:
@@ -509,8 +505,10 @@ class EvalCls:
                     if mark_best and metric in self.metrics_to_choose_model:
                         best_epoch = metric_best_epoch[metric]
                         best_value = metric_history[best_epoch]
-                        plt.annotate(s="%.2f" % float(best_value), xy=(best_epoch, float(best_value)),  xycoords='data', xytext=(10, 10), textcoords='offset points',
-                                     arrowprops={"arrowstyle": "->", "connectionstyle": "arc,angleA=0,armA=20,angleB=90,armB=15,rad=7"})
+                        plt.annotate(s="%.2f" % float(best_value), xy=(best_epoch, float(best_value)), xycoords='data',
+                                     xytext=(10, 10), textcoords='offset points',
+                                     arrowprops={"arrowstyle": "->",
+                                                 "connectionstyle": "arc,angleA=0,armA=20,angleB=90,armB=15,rad=7"})
 
                 plt.title("%s: %s" % (history_name, aspect))
                 plt.legend(loc='best', fontsize='small')
@@ -567,7 +565,8 @@ class EvalCls:
             values = np.asarray(metric2bests[metric]) * 100
             plt.subplot(grid_row, grid_col, i + 1)
             for j, best_metric in enumerate(self.metrics):
-                rects = plt.bar(index + bar_width * j, values[:, j], width=bar_width, alpha=opacity, label=best_metric, color=colors[j])
+                rects = plt.bar(index + bar_width * j, values[:, j], width=bar_width, alpha=opacity, label=best_metric,
+                                color=colors[j])
                 for rect in rects:
                     width, height = rect.get_x() + rect.get_width() / 2, rect.get_height()
                     plt.text(width, height, '%.2f' % float(height), fontsize=fontsize, horizontalalignment='center')
@@ -581,281 +580,3 @@ class EvalCls:
         # save figure
         plt.savefig(check_duplicate_path(filename))
         plt.close()
-
-
-class DataCls:
-    def get_xs(self):
-        raise NotImplementedError("Please implement 'get_xs' method.")
-
-    def get_ys(self):
-        raise NotImplementedError("Please implement 'get_ys' method.")
-
-    def to_json(self):
-        raise NotImplementedError("Please implement 'to_json' method.")
-
-
-class ExeCls:
-    def __init__(self, batch_size, lr=0.001, epochs=50, decay=1.0, shuffle=True, shuffle_seed=12345, **kwargs):
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.lr = lr
-        self.decay = decay
-        self.shuffle = shuffle
-        self.shuffle_seed = shuffle_seed
-        self.kwargs = kwargs
-
-    def exe_train(self, model, all_xs, all_ys, lr, **kwargs):
-        total_len = len(all_xs)
-
-        nb_samples = total_len // self.batch_size
-        predictions, origins, losses = [], [], []
-        for i in range(nb_samples):
-            xs = all_xs[self.batch_size * i: self.batch_size * (i + 1)]
-            ys = all_ys[self.batch_size * i: self.batch_size * (i + 1)]
-
-            res = model.train(np.asarray(xs, dtype='int32'), np.asarray(ys, dtype='int32'), lr)
-
-            losses.append(res[: -1])
-            predictions.extend(list(res[-1]))
-            origins.extend(list(ys))
-
-        else:
-            # this version is important, because it is training on the tails of the datasets
-            if self.batch_size * (i + 1) < total_len:
-                actual_len = total_len - self.batch_size * (i + 1)
-                xs = all_xs[-self.batch_size:]
-                ys = all_ys[-self.batch_size:]
-
-                res = model.train(np.asarray(xs, dtype='int32'), np.asarray(ys, dtype='int32'), lr)
-
-                losses.append(res[:-1])
-                predictions.extend(list(res[-1][-actual_len:]))
-                origins.extend(list(ys[-actual_len:]))
-
-        return np.array(predictions), np.array(origins), losses
-
-    def exe_predict(self, model, all_xs, all_ys):
-        total_len = len(all_xs)
-
-        nb_samples = len(all_xs) // self.batch_size
-        predictions, origins, losses = [], [], []
-        for i in range(nb_samples):
-            xs = all_xs[self.batch_size * i: self.batch_size * (i + 1)]
-            ys = all_ys[self.batch_size * i: self.batch_size * (i + 1)]
-            res = model.predict(np.asarray(xs, dtype='int32'), np.asarray(ys, dtype='int32'))
-
-            losses.append(res[0])
-            predictions.extend(list(res[-1]))
-            origins.extend(list(ys))
-
-        else:
-            if self.batch_size * (i + 1) < total_len:
-                actual_len = total_len - self.batch_size * (i + 1)
-
-                xs = all_xs[-self.batch_size:]
-                ys = all_ys[-self.batch_size:]
-
-                res = model.predict(np.asarray(xs, dtype='int32'), np.asarray(ys, dtype='int32'))
-
-                losses.append(res[0])
-                predictions.extend(list(res[-1][-actual_len:]))
-                origins.extend(list(ys[-actual_len:]))
-
-        assert len(origins) == len(all_ys)
-        return np.array(predictions), np.array(origins), losses
-
-    def to_json(self):
-        config = {
-            'batch_size': self.batch_size,
-            'epochs': self.epochs,
-            'lr': self.lr,
-            'decay': self.decay,
-            'shuffle': self.shuffle,
-            'shuffle_seed': self.shuffle_seed,
-            'kwargs': self.kwargs
-        }
-        return config
-
-
-class TestCls:
-    @staticmethod
-    def _epoch_exe(func, y_num, **kwargs):
-        """
-        This is one epoch's steps:
-            First train or predict, Then evaluate.
-
-        :param func: model train function or model predict function.
-        :param train: If this is epoch train execution, then return one more thing - loss.
-        :param kwargs: function 'func' parameters
-        """
-        # train or predict  function
-        predictions, origins, loss = func(**kwargs)
-        loss = np.mean(np.asarray(loss[:-1]), axis=0)  # if train, loss is list, if predict, loss is number
-
-        # evaluate
-        confusion_matrix = EvalCls.get_confusion_matrix(predictions, origins, y_num)
-        evaluation_matrix = EvalCls.get_evaluation_matrix(confusion_matrix)
-
-        # return
-        return confusion_matrix, evaluation_matrix, loss
-
-    @staticmethod
-    def hold_out_validation(model_cls, data_cls, execute_cls, evaluate_cls, file=sys.stdout, name=None):
-        """
-        losses: may include train loss, L1 loss, L2 loss
-        *_acc: accuracy
-        *_maf1: macro F1
-        *_val_mat: confusion matrix
-        *_f1_mat: F1 matrix
-
-
-        :param model_cls: the model class, to train or predict
-        :param data_cls: the data class, to provide data
-        :param execute_cls: the execution class, to provide whole data training and predicting
-        :param evaluate_cls: the evaluation class, to provide all kinds of evaluation methods
-        :param file: The output file
-        :param name: Hold out validation name, if None, name = 'default'
-        """
-
-        ##############################
-        # Preparation
-        ##############################
-        # checking
-        assert isinstance(data_cls, DataCls)
-        assert isinstance(execute_cls, ExeCls)
-        assert isinstance(evaluate_cls, EvalCls)
-        assert hasattr(model_cls, 'compile') and hasattr(model_cls, 'to_json')
-        assert hasattr(model_cls, 'predict') and hasattr(model_cls, 'train')
-
-        # variables
-        t0 = time.time()
-        stdout = sys.stdout
-        sys.stdout = file
-        history_name = name or 'default'
-        y_num = len(evaluate_cls.index2tag)
-        shuffle_rng = np.random.RandomState(execute_cls.shuffle_seed)
-
-        ##############################
-        # Parameter logging
-        ##############################
-        print("", file=file)
-        for name, cls in (('Model Class', model_cls), ("Data Class", data_cls),
-                          ("Evaluation Class", evaluate_cls), ("Execute Class", execute_cls)):
-            print('%s Parameter:' % name, file=file)
-            for key, value in sorted(cls.to_json().items()):
-                if isinstance(value, dict):
-                    print("\t%s: " % key, file=file)
-                    for key2, value2 in value.items():
-                        print("\t\t%s = %s" % (key2, value2), file=file)
-                else:
-                    print("\t%s = %s" % (key, value), file=file)
-            print("", file=file)
-        file.flush()
-
-        ##############################
-        # Data getting
-        ##############################
-        # X: input
-        all_xs = data_cls.get_xs()
-        train_xs = all_xs['train']
-        valid_xs = all_xs['valid']
-        test_xs = all_xs['test']
-
-        # Y: output
-        all_ys = data_cls.get_ys()
-        train_ys = all_ys['train']
-        valid_ys = all_ys['valid']
-        test_ys = all_ys['test']
-
-        # count
-        index2tag = evaluate_cls.index2tag
-        for aspect in ['train', 'valid', 'test']:
-            print("In %s data:" % aspect, file=file)
-            print("\tTotal data number - %d" % len(all_ys[aspect]), file=file)
-            counter = Counter(yield_item(all_ys[aspect]))
-            for key, value in sorted(counter.items()):
-                print("\t%s data number - %d" % (index2tag[key], value), file=file)
-            print("", file=file)
-
-        ##############################
-        # Model
-        ##############################
-        t1 = time.time()
-        print("building model ...", file=file)
-        model_cls.compile()
-        print("building done, used %s.\n" % time_format(time.time() - t1), file=file)
-
-        ##############################
-        # Execution
-        ##############################
-        for epoch in range(execute_cls.epochs):
-            # epoch variables
-            t1 = time.time()
-            lr = execute_cls.lr
-
-            # start work
-            if execute_cls.shuffle:
-                s = shuffle_rng.randint(0, 99999)
-                np.random.seed(s)  # definitely important
-                # train_xs = np.random.permutation(train_xs)
-                np.random.shuffle(train_xs)
-                np.random.seed(s)  # definitely important
-                # train_ys = np.random.permutation(train_ys)
-                np.random.shuffle(train_ys)
-
-            # training
-            confusion_mat, evaluation_mat, loss = TestCls._epoch_exe(
-                execute_cls.exe_train, y_num, model=model_cls, all_xs=train_xs, all_ys=train_ys, lr=lr)
-            if 'training' in evaluate_cls.aspects:
-                evaluate_cls.add_history(history_name, 'training', confusion_mat, evaluation_mat, loss)
-
-            # trained
-            if 'trained' in evaluate_cls.aspects:
-                confusion_mat, evaluation_mat, loss = TestCls._epoch_exe(
-                    execute_cls.exe_predict, y_num, model=model_cls, all_xs=train_xs, all_ys=train_ys)
-                evaluate_cls.add_history(history_name, 'trained', confusion_mat, evaluation_mat, loss)
-
-            # valid
-            if 'valid' in evaluate_cls.aspects:
-                confusion_mat, evaluation_mat, loss = TestCls._epoch_exe(
-                    execute_cls.exe_predict, y_num, model=model_cls, all_xs=valid_xs, all_ys=valid_ys)
-                evaluate_cls.add_history(history_name, 'valid', confusion_mat, evaluation_mat, loss)
-            else:
-                raise OSError("Model must valid.")
-
-            # test
-            if 'test' in evaluate_cls.aspects:
-                confusion_mat, evaluation_mat, loss = TestCls._epoch_exe(
-                    execute_cls.exe_predict, y_num, model=model_cls, all_xs=test_xs, all_ys=test_ys)
-                evaluate_cls.add_history(history_name, 'test', confusion_mat, evaluation_mat, loss)
-            else:
-                raise OSError("Model must test.")
-
-            # end work
-            execute_cls.lr = lr * execute_cls.decay
-            evaluate_cls.output_epoch(history_name, epoch, file=file)
-            print("Used time %s" % time_format(time.time() - t1))
-            file.flush()
-        else:
-            evaluate_cls.output_bests(history_name, file=file)
-
-        # end end work
-        print("Used time %s" % time_format(time.time() - t0), file=file)
-        file.flush()
-        sys.stdout = stdout
-
-    @staticmethod
-    def cv_plot(evaluate, file_path, tags=None, file=sys.stdout):
-        evaluate.output_total_bests(file=file)
-
-        t0 = time.time()
-        evaluate.plot_history_losses("%s-losses.png" % file_path)
-        evaluate.plot_history_evaluations("%s-evals.png" % file_path, mark_best=True)
-        if tags is not None:
-            for tag in tags:
-                evaluate.plot_history_evaluations('%s-%s.png' % (file_path, tag), tag)
-        evaluate.plot_bests('%s-bests.png' % file_path)
-        print("Plotting used time %s" % time_format(time.time() - t0), file=file)
-
-
-
