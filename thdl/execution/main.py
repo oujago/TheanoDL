@@ -13,7 +13,7 @@
 import numpy as np
 
 
-class ExeCls:
+class Execution:
     def __init__(self, batch_size, lr=0.001, epochs=50, decay=1.0, shuffle=True, shuffle_seed=12345, **kwargs):
         self.batch_size = batch_size
         self.epochs = epochs

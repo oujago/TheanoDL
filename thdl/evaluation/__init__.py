@@ -9,5 +9,5 @@
     
 """
 
-from .main import EvalCls
+from .main import Evaluation
 

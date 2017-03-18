@@ -8,9 +8,12 @@
 @notes:
     
 """
+
+import os
 from collections import OrderedDict
 
 import xlwt
+from six.moves import cPickle as pickle
 
 
 def write_xls(contents, filepath):
@@ -47,3 +50,23 @@ def write_xls(contents, filepath):
 
     else:
         raise ValueError("Unknown format.")
+
+
+def pickle_dump(data, path):
+    """
+    Given the DATA, then pickle it into the PATH.
+    :param data: the f_data to pickle
+    :param path: the path to store the pickled f_data
+    """
+    pickle.dump(data, open(os.path.join(os.getcwd(), path), 'wb'))
+
+
+def pickle_load(path):
+    """
+    From the PATH get the DATA.
+    :param path: the path that store the pickled f_data
+    """
+    data = pickle.load(open(os.path.join(os.getcwd(), path), 'rb'))
+    return data
+
+

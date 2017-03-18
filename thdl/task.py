@@ -16,11 +16,11 @@ from collections import Counter
 
 import numpy as np
 
-from thdl.data.nlp_data import yield_item
+from thdl.data.processing import yield_item
 from thdl.tool.other import time_format
-from .data import DataCls
-from .evaluation import EvalCls
-from .execution import ExeCls
+from .data import Data
+from .evaluation import Evaluation
+from .execution import Execution
 
 
 class Task:
@@ -39,8 +39,8 @@ class Task:
         loss = np.mean(np.asarray(loss[:-1]), axis=0)  # if train, loss is list, if predict, loss is number
 
         # evaluate
-        confusion_matrix = EvalCls.get_confusion_matrix(predictions, origins, y_num)
-        evaluation_matrix = EvalCls.get_evaluation_matrix(confusion_matrix)
+        confusion_matrix = Evaluation.get_confusion_matrix(predictions, origins, y_num)
+        evaluation_matrix = Evaluation.get_evaluation_matrix(confusion_matrix)
 
         # return
         return confusion_matrix, evaluation_matrix, loss
@@ -67,9 +67,9 @@ class Task:
         # Preparation
         ##############################
         # checking
-        assert isinstance(data_cls, DataCls)
-        assert isinstance(execute_cls, ExeCls)
-        assert isinstance(evaluate_cls, EvalCls)
+        assert isinstance(data_cls, Data)
+        assert isinstance(execute_cls, Execution)
+        assert isinstance(evaluate_cls, Evaluation)
         assert hasattr(model_cls, 'compile') and hasattr(model_cls, 'to_json')
         assert hasattr(model_cls, 'predict') and hasattr(model_cls, 'train')
 

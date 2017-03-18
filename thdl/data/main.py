@@ -6,11 +6,11 @@
 @date: Created on 2017/3/18
 
 @notes:
-    
+    Define the abstract data class
 """
 
 
-class DataCls:
+class Data:
     def get_xs(self):
         raise NotImplementedError("Please implement 'get_xs' method.")
 

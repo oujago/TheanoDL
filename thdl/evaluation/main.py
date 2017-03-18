@@ -22,7 +22,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
-class EvalCls:
+class Evaluation:
     """
     In this class, there are some complicated attributions, like:
 
@@ -225,9 +225,9 @@ class EvalCls:
 
         # calculate each element precision, recall, F1
         for i in range(confusion_matrix.shape[0]):
-            precision = EvalCls.divide(confusion_matrix[i, i], np.sum(confusion_matrix[:, i]))
-            recall = EvalCls.divide(confusion_matrix[i, i], np.sum(confusion_matrix[i, :]))
-            f1 = EvalCls.divide((1 + beta ** 2) * precision * recall, beta ** 2 * precision + recall)
+            precision = Evaluation.divide(confusion_matrix[i, i], np.sum(confusion_matrix[:, i]))
+            recall = Evaluation.divide(confusion_matrix[i, i], np.sum(confusion_matrix[i, :]))
+            f1 = Evaluation.divide((1 + beta ** 2) * precision * recall, beta ** 2 * precision + recall)
             res_matrix[i, 0] = precision
             res_matrix[i, 1] = recall
             res_matrix[i, 2] = f1
@@ -236,7 +236,7 @@ class EvalCls:
         res_matrix[-2, :] = np.mean(res_matrix[:-2, :], axis=0)
 
         # calculate micro precision, recall, F1
-        res_matrix[-1, :] = EvalCls.divide(np.sum(np.diag(confusion_matrix)), np.sum(confusion_matrix))
+        res_matrix[-1, :] = Evaluation.divide(np.sum(np.diag(confusion_matrix)), np.sum(confusion_matrix))
 
         return res_matrix
 

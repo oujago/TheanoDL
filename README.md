@@ -25,7 +25,7 @@ is born under the surpervision of this idea. The operation flow is shown in
 # Advantages
 
 My implemented deep learning framework is on the top of [Theano](https://github.com/Theano/Theano) 
-library. We encapsulate commonly used models such as SimpleRNN, GRU, LSTM, CNN, CNN-RNN and several 
+library. I encapsulate commonly used models such as SimpleRNN, GRU, LSTM, CNN, CNN-RNN and several 
 variants of LSTM. Our framework is flexible and convenient. The most important thing is that my framework 
 **supports the visualization of evaluation results**, such as accuracy and loss.
 

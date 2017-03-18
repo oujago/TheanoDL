@@ -11,8 +11,8 @@
 
 from .base import SubNet
 from .basic import MLP
-from .basic import NOR
 from .conv import Conv
+from .main import NOR
 from .normalization import BN
 from .recurrent import GRU
 from .recurrent import LSTM

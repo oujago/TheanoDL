@@ -55,20 +55,7 @@ def time_format(total_time):
 
 
 def pad_sequences(sequences, maxlen=None, dtype='int32', padding='pre', truncating='pre', value=0.):
-    from thdl.data import nlp_data
+    from thdl.data import processing
     print("Please use thdl.nlp_data.pad_sequences()!")
-    return nlp_data.pad_sequences(sequences, maxlen, dtype, padding, truncating, value)
-
-
-
-
-def yield_item(iterable):
-    print("Please use thdl.nlp_data.yield_item()!")
-    for item in iterable:
-        if type(item).__name__ == 'list':
-            for elem in yield_item(item):
-                yield elem
-        else:
-            yield item
-
+    return processing.pad_sequences(sequences, maxlen, dtype, padding, truncating, value)
 
