@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+
+"""
+@author: ChaoMing (www.oujago.com)
+
+@date: Created on 2017/3/18
+
+@notes:
+    
+"""
+from collections import OrderedDict
+
+import xlwt
+
+
+def write_xls(contents, filepath):
+    if isinstance(contents, dict):
+        wb = xlwt.Workbook()
+        ws = wb.add_sheet('sheet 1')
+
+        if not isinstance(contents, OrderedDict):
+            print("contents should be a instance of 'OrderedDict'.")
+
+        for i, (head, content) in enumerate(contents.items()):
+            ws.write(0, i, head)
+            ws.write(1, i, content)
+
+        wb.save(os.path.join(os.getcwd(), filepath))
+
+    elif isinstance(contents, list) and isinstance(contents[0], dict):
+        wb = xlwt.Workbook()
+        ws = wb.add_sheet('sheet 1')
+
+        if not isinstance(contents[0], OrderedDict):
+            print("contents should be a instance of 'OrderedDict'.")
+
+        for i, (head, _) in enumerate(contents[0].items()):
+            ws.write(0, i, head)
+
+        i = 0
+        for content in contents:
+            i += 1
+            for j, (_, value) in enumerate(content.items()):
+                ws.write(i, j, value)
+
+        wb.save(os.path.join(os.getcwd(), filepath))
+
+    else:
+        raise ValueError("Unknown format.")

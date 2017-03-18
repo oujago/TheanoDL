@@ -9,25 +9,11 @@
     
 """
 
+from . import data
+from . import evaluation
+from . import execution
+from . import model
+from . import tool
 
-backend = None
-
-
-def use(framework):
-    global backend
-
-    if framework.lower() == 'theano':
-        backend = 'theano'
-
-    if framework.lower() in ['tf', 'tensorflow']:
-        backend = 'tensorflow'
-
-    if framework.lower() == 'neon':
-        backend = 'neon'
-
-
-def get():
-    return backend
-
-
+from .flow import Task
 
