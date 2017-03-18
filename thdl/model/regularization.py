@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-@author: ChaoMing (www.oujago.com)
+@author: ChaoMing (https://oujago.github.io/)
 
 @date: Created on 2017/3/18
 
