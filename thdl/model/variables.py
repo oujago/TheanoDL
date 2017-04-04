@@ -3,7 +3,7 @@
 
 from theano import tensor
 
-from .initializations import get_shared
+from . import initialization
 
 dtype = tensor.config.floatX
 

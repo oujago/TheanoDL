@@ -15,3 +15,6 @@ from .config import get_config
 from .config import set_config
 from .config import set_w2v
 
+from . import random
+
+

@@ -10,7 +10,7 @@
 - xlwt
 - nltk
 
-# Design Philosophy
+## Design Philosophy
 
 Totally speaking, in every task, **_the operation flow/process is unchanged_** and **_the only
 changing thing is just the specific operation in each operation_**. (业务流程是不变的，变化的只是
@@ -21,7 +21,7 @@ Every artificial intelligence(AI) task involves four components: **Model**, **Da
 
 ![four classes](doc/pics/p2.PNG)
 
-# Features
+## Features
 
 - Support commonly used models, including convnets, RNNs and LSTMS.
 - Support visualization of evaluation results.

@@ -3,7 +3,7 @@
 from theano import tensor
 
 from .base import SubNet
-from ..activations import get_activation
+from ..activation import get_activation
 from ..variables import get_shared
 
 dot = tensor.dot

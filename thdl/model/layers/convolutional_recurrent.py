@@ -6,7 +6,7 @@ from theano import tensor
 from .base import Layer
 from .conv import Conv2D
 from .conv import Pool2D
-from ..activations import get_activation
+from ..activation import get_activation
 
 dot = tensor.dot
 

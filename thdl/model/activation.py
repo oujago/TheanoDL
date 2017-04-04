@@ -3,6 +3,18 @@
 from theano import tensor
 
 
+class Activation(object):
+    def __call__(self, input):
+        return self.call(input)
+
+    def call(self, input):
+        raise NotImplementedError()
+
+
+
+
+
+
 def get_activation(name, **kwargs):
     """
     activation getting method
