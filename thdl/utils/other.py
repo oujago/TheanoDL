@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2016/10/26
-
-@notes:
-
-"""
 
 import math
 import os

@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2016/11/5
-
-@notes:
-    
-"""
 
 from theano import tensor
 

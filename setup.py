@@ -4,26 +4,25 @@ from setuptools import setup
 version = '0.1.2'
 
 description = """
-Deep Learning Framework
+Deep Learning Framework on the top of Theano, so it called "thdl".
 """
 
-
 install_requires = [
-      'numpy',
-      'matplotlib',
-      'xlwt',
-      'nltk',
-      'theano',
-      'scipy'
+    'numpy',
+    'matplotlib',
+    'xlwt',
+    'nltk',
+    'theano>=0.9',
+    'scipy'
 ]
 
-setup(name='thdl',
-      version=version,
-      description=description,
-      author='Chaoming Wang',
-      packages=find_packages(),
-      author_email='oujago@gmail.com',
-      url='https://oujago.github.io/',
-      install_requires=install_requires
-      # package_data={'thdl': ['*.*', ]}
-      )
+setup(
+    name='thdl',
+    version=version,
+    description=description,
+    author='Chao-Ming Wang',
+    packages=find_packages(),
+    author_email='oujago@gmail.com',
+    url='https://oujago.github.io/',
+    install_requires=install_requires
+)

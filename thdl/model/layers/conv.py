@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2017/3/17
-
-@notes:
-    
-"""
-
 from theano import tensor
 from theano.tensor.nnet import conv
 from theano.tensor.signal import pool

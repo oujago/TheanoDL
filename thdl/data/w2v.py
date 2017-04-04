@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2016/11/8
-
-@notes:
-    
-"""
 
 import numpy as np
 
-from ..tool import get_config
-from ..tool import pickle_dump
-from ..tool import pickle_load
-from ..tool import set_w2v
+from ..utils import get_config
+from ..utils import pickle_dump
+from ..utils import pickle_load
+from ..utils import set_w2v
 
 
 class W2VGet:

@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2017/3/17
-
-@notes:
-    
-"""
 
 from theano import tensor
 
@@ -35,14 +27,14 @@ class ToolBox(Layer):
         if self.tool == 'dimshuffle':
             return input.dimshuffle(self.kwargs['pattern'])
 
-        raise ValueError("Unknown tool method: %s" % self.tool)
+        raise ValueError("Unknown utils method: %s" % self.tool)
 
     def __str__(self):
         return "ToolBox"
 
     def to_json(self):
         config = {
-            'tool': self.tool,
+            'utils': self.tool,
             'args': self.args,
             'kwargs': self.kwargs
         }

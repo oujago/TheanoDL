@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2017/3/18
-
-@notes:
-    
-"""
-
 
 import sys
 import time
@@ -17,7 +8,7 @@ from collections import Counter
 import numpy as np
 
 from thdl.data.processing import yield_item
-from thdl.tool.other import time_format
+from thdl.utils.other import time_format
 from .data import Data
 from .evaluation import Evaluation
 from .execution import Execution

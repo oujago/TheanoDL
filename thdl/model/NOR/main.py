@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2017/3/18
-
-@notes:
-    
-"""
-
 import numpy as np
 from theano import scan
 from theano import tensor
