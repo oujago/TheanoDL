@@ -7,7 +7,7 @@ import numpy as np
 from theano import shared
 from theano import tensor
 
-from .variables import dtype
+from .utils.random import get_dtype
 
 
 class Optimizer(object):
@@ -20,6 +20,7 @@ class Optimizer(object):
     Update functions take a loss expression or a list of gradient expressions and
     a list of parameters as input and return an ordered dictionary of updates:
     """
+
     def __init__(self, learning_rate, clip_norm=0., max_norm=0.):
         self.learning_rate = learning_rate
         self.clip_norm = clip_norm
@@ -46,6 +47,7 @@ class SGD(Optimizer):
     Generates update expressions of the form:
     * ``param := param - learning_rate * gradient``
     """
+
     def __init__(self, **kwargs):
         super(SGD, self).__init__(**kwargs)
 
@@ -71,6 +73,7 @@ class Momentum(Optimizer):
     Higher momentum also results in larger update steps. To counter that,
     you can optionally scale your learning rate by `1 - momentum`.
     """
+
     def __init__(self, momentum=0.9, **kwargs):
         self.momentum = momentum
         super(Momentum, self).__init__(**kwargs)
@@ -163,12 +166,12 @@ class Adagrad(Optimizer):
     .. [2] Chris Dyer:
            Notes on AdaGrad. http://www.ark.cs.cmu.edu/cdyer/adagrad.pdf
     """
+
     def __init__(self, epsilon, **kwargs):
         super(Adagrad, self).__init__(**kwargs)
         self.epsilon = epsilon
 
     def get_updates(self, params, cost):
-
         grads = super(Adagrad, self).get_updates(params, cost)
 
         updates = OrderedDict()
@@ -209,6 +212,7 @@ class RMSprop(Optimizer):
            Neural Networks for Machine Learning, Lecture 6.5 - rmsprop.
            Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)
     """
+
     def __init__(self, rho=0.9, epsilon=1e-6, **kwargs):
         super(RMSprop, self).__init__(**kwargs)
 
@@ -330,7 +334,7 @@ class Adam(Optimizer):
         grads = super(Adam, self).get_updates(params, cost)
 
         updates = OrderedDict()
-        t_prev = shared(np.asarray(0., dtype=dtype))
+        t_prev = shared(np.asarray(0., dtype=get_dtype()))
         one = tensor.constant(1)
         t = t_prev + 1
         a_t = self.learning_rate * tensor.sqrt(one - self.beta2 ** t) / (one - self.beta1 ** t)
@@ -376,7 +380,7 @@ class Adamax(Optimizer):
     def get_updates(self, params, cost):
         grads = super(Adamax, self).get_updates(params, cost)
 
-        t_prev = shared(np.asarray(0., dtype=dtype))
+        t_prev = shared(np.asarray(0., dtype=get_dtype()))
         updates = OrderedDict()
 
         # Using theano constant to prevent upcasting of float32

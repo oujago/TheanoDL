@@ -3,8 +3,8 @@
 import numpy as np
 from theano import tensor
 
+from thdl.model.utils.variables import dtype
 from .base import Layer
-from ..variables import dtype
 from ..initialization import get_shared
 
 

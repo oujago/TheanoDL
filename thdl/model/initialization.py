@@ -4,8 +4,8 @@
 import numpy as np
 import theano
 
-from ..utils.random import get_dtype
-from ..utils.random import get_rng
+from .utils.random import get_dtype
+from .utils.random import get_rng
 
 
 def shared(value, borrow=True):

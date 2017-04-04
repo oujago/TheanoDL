@@ -2,9 +2,9 @@
 
 from theano import tensor
 
+from thdl.model.utils.variables import get_shared
 from .base import SubNet
 from ..activation import get_activation
-from ..variables import get_shared
 
 dot = tensor.dot
 

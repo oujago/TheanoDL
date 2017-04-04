@@ -2,12 +2,12 @@
 
 from theano import tensor
 
+from thdl.model.utils.variables import get_gru_variables
+from thdl.model.utils.variables import get_lstm_variables
+from thdl.model.utils.variables import get_mgu_variables
+from thdl.model.utils.variables import get_rnn_variables
 from .base import SubNet
 from ..activation import get_activation
-from ..variables import get_gru_variables
-from ..variables import get_lstm_variables
-from ..variables import get_mgu_variables
-from ..variables import get_rnn_variables
 
 dot = tensor.dot
 
