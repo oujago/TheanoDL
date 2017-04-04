@@ -4,8 +4,8 @@
 from theano import tensor
 
 from .base import Layer
-from .conv import Conv2D
-from .conv import Pool2D
+from .convolution import Convolution
+from .convolution import Pool2D
 from ..activation import get_activation
 
 dot = tensor.dot
@@ -38,7 +38,7 @@ class NLPConvPooling(Layer):
         self.all_pooling = []
         for i in range(len(filter_heights)):
             filter_shape = (self.filter_nums[i], image_shape[1], filter_heights[i], filter_width)
-            self.all_conv.append(Conv2D(rng, image_shape, filter_shape, activation, init))
+            self.all_conv.append(Convolution(rng, image_shape, filter_shape, activation, init))
             self.train_params.extend(self.all_conv[i].train_params)
             self.reg_params.extend(self.all_conv[i].reg_params)
             self.updates.update(self.all_conv[i].updates)
@@ -96,7 +96,7 @@ class NLPConv(Layer):
         self.all_conv = []
         for i in range(len(filter_heights)):
             filter_shape = (self.filter_nums[i], image_shape[1], filter_heights[i], filter_width)
-            self.all_conv.append(Conv2D(rng, image_shape, filter_shape, activation, init))
+            self.all_conv.append(Convolution(rng, image_shape, filter_shape, activation, init))
             self.train_params.extend(self.all_conv[i].train_params)
             self.reg_params.extend(self.all_conv[i].reg_params)
             self.updates.update(self.all_conv[i].updates)
@@ -155,14 +155,14 @@ class NLPAsymConv(Layer):
         self.all_col_conv = []
         for i in range(len(filter_heights)):
             filter_shape = (self.filter_nums[i], image_shape[1], 1, filter_width)
-            self.all_row_conv.append(Conv2D(rng, image_shape, filter_shape, activation, init))
+            self.all_row_conv.append(Convolution(rng, image_shape, filter_shape, activation, init))
             self.train_params.extend(self.all_row_conv[i].train_params)
             self.reg_params.extend(self.all_row_conv[i].reg_params)
             self.updates.update(self.all_row_conv[i].updates)
 
             col_image_shape = (image_shape[0], self.filter_nums[i], image_shape[2], 1)
             filter_shape = (self.filter_nums[i], self.filter_nums[i], filter_heights[i], 1)
-            self.all_col_conv.append(Conv2D(rng, col_image_shape, filter_shape, activation, init))
+            self.all_col_conv.append(Convolution(rng, col_image_shape, filter_shape, activation, init))
             self.train_params.extend(self.all_col_conv[i].train_params)
             self.reg_params.extend(self.all_col_conv[i].reg_params)
             self.updates.update(self.all_col_conv[i].updates)

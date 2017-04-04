@@ -7,11 +7,12 @@ from .base import Layer
 from ..activation import Softmax as SoftmaxAct
 from ..activation import Tanh
 from ..initialization import GlorotUniform
+from ..initialization import _zero
 
 
 class Dense(Layer):
     def __init__(self, n_out, n_in=None, activation=Tanh(), init=GlorotUniform(),
-                 W_regularizer=None, b_regularizer=None):
+                 W_regularizer=None, b_regularizer=None, bias=None):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -33,6 +34,7 @@ class Dense(Layer):
         self.init = init
         self.W_regularizer = W_regularizer
         self.b_regularizer = b_regularizer
+        self.bias = bias
 
     def connect_to(self, pre_layer=None):
         if pre_layer is None:
@@ -43,10 +45,13 @@ class Dense(Layer):
 
         self.output_shape = (None, self.n_out)
         self.W = self.init((n_in, self.n_out))
-        self.b = self.init((self.n_out,))
+        if self.bias:
+            self.b = _zero((self.n_out,))
 
     def forward(self, input, **kwargs):
-        output = tensor.dot(input, self.W) + self.b
+        output = tensor.dot(input, self.W)
+        if self.bias:
+            output += self.b
         output = self.activation(output)
         return output
 
@@ -54,14 +59,18 @@ class Dense(Layer):
         config = {
             'n_in': self.n_in,
             'n_out': self.n_out,
-            'activation': self.activation.__name__,
-            'init': self.init.__name__
+            'activation': self.activation,
+            'init': self.init,
+            'bias': self.bias
         }
         return config
 
     @property
     def params(self):
-        return self.W, self.b
+        if self.bias:
+            return self.W, self.b
+        else:
+            return self.W
 
     @property
     def regularizers(self):
@@ -77,7 +86,7 @@ class Dense(Layer):
 
 
 class Softmax(Dense):
-    def __init__(self, n_out, n_in=None, init=GlorotUniform(), W_regularizer=None, b_regularizer=None):
-        super(Softmax, self).__init__(n_out, n_in, activation=SoftmaxAct(), init=init,
-                                      W_regularizer=W_regularizer, b_regularizer=b_regularizer)
+    def __init__(self, n_out, n_in=None, init=GlorotUniform(), W_regularizer=None, b_regularizer=None, bias=True):
+        super(Softmax, self).__init__(n_out, n_in, activation=SoftmaxAct(), init=init, W_regularizer=W_regularizer,
+                                      b_regularizer=b_regularizer, bias=bias)
 

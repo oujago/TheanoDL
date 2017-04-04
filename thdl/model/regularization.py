@@ -13,12 +13,13 @@ class Regularizer(object):
         return self.call(param)
 
     def call(self, param):
-        regularization = 0.
+        assert param
+
+        if self.l1 > 0. and self.l2 > 0.:
+            return tensor.sum(tensor.abs_(param) * self.l1) + tensor.sum(tensor.square(param) * self.l2)
 
         if self.l1 > 0.:
-            regularization += tensor.sum(tensor.abs_(param) * self.l1)
+            return tensor.sum(tensor.abs_(param) * self.l1)
 
         if self.l2 > 0.:
-            regularization += tensor.sum(tensor.square(param) * self.l2)
-
-        return regularization
+            return tensor.sum(tensor.square(param) * self.l2)
