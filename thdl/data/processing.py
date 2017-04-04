@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2016/12/17
-
-@notes:
-    
-"""
-
 import re
 import numpy as np
 

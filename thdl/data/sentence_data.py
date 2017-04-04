@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-@author: ChaoMing (https://oujago.github.io/)
-
-@date: Created on 2017/3/18
-
-@notes:
-    
-"""
-
 import os
 from collections import Counter
 
@@ -19,8 +10,8 @@ from .processing import get_split
 from .processing import item_list2index_list
 from .processing import yield_item
 from .w2v import W2VGet
-from ..tool import pickle_dump
-from ..tool import pickle_load
+from ..utils import pickle_dump
+from ..utils import pickle_load
 
 
 class SentenceCorpus:
