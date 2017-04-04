@@ -6,10 +6,10 @@ from collections import OrderedDict
 
 
 class Layer(object):
-    def connet_to(self, pre_layer=None):
+    def connect_to(self, pre_layer=None):
         raise NotImplementedError()
 
-    def forward(self, pre_layer, **kwargs):
+    def forward(self, input, **kwargs):
         raise NotImplementedError()
 
     def to_json(self):
@@ -31,11 +31,9 @@ class Layer(object):
         return []
 
     @property
-    def regulars(self):
+    def regularizers(self):
         return []
 
-    # def __str__(self):
-    #     raise NotImplementedError("Every Layer class should implement the '__str__' method.")
-    #
-    # def __call__(self, *args, **kwargs):
-    #     raise NotImplementedError("Every Layer class should implement the '__call__' method.")
+    @property
+    def updates(self):
+        return []

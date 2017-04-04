@@ -1,78 +1,17 @@
 # -*- coding: utf-8 -*-
 
 from theano import tensor
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+
 
 from .base import Layer
-from .. import activation
-from .. import initialization
-
-
-class Activation(Layer):
-    def __init__(self, activation, **kwargs):
-        super(Activation, self).__init__()
-        self.act_name = activation
-        self.act_func = get_activation(activation, **self.kwargs)
-        self.kwargs = kwargs
-
-    def __call__(self, input):
-        return self.act_func(input)
-
-    def __str__(self):
-        return 'Activation'
-
-    def to_json(self):
-        config = {
-            'activation': self.act_name,
-            'kwargs': self.kwargs
-        }
-        return config
-
-
-class Dropout(Layer):
-    def __init__(self, rng, p):
-        """
-        :param rng: a random number generator used to initialize weights
-        :param p: the probability of dropping a unit
-        """
-        super(Dropout, self).__init__()
-
-        # parameters
-        self.srng = RandomStreams(seed=rng.randint(100, 2147462579))
-        self.p = p
-
-    def __call__(self, input, train=True):
-        """
-        :param input: a symbolic tensor of shape (n_examples, n_in)
-        :param train:
-        :return:
-        """
-        # outputs
-        if 0. < self.p < 1.:
-            if train:
-                output = input * self.srng.binomial(
-                    n=1, p=1 - self.p, size=input.shape,
-                    dtype=input.dtype) / (1 - self.p)
-            else:
-                output = input * (1 - self.p)
-        else:
-            output = input
-        return output
-
-    def __str__(self):
-        return 'Dropout'
-
-    def to_json(self):
-        config = {
-            'p': self.p
-        }
-        return config
+from ..activation import Softmax as SoftmaxAct
+from ..activation import Tanh
+from ..initialization import GlorotUniform
 
 
 class Dense(Layer):
-    def __init__(self, n_out, n_in=None,
-                 activation='tanh', init='glorot_uniform',
-                 W=None, b=None):
+    def __init__(self, n_out, n_in=None, activation=Tanh(), init=GlorotUniform(),
+                 W_regularizer=None, b_regularizer=None):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -80,7 +19,6 @@ class Dense(Layer):
 
         Hidden unit activation is given by: tanh(dot(input,W) + b)
 
-        :param rng: a random number generator used to initialize weights
         :param n_in: dimensionality of input
         :param n_out: number of hidden units
         :param activation: Non linearity to be applied in the hidden layer
@@ -89,74 +27,57 @@ class Dense(Layer):
         super(Dense, self).__init__()
 
         # parameters
-        self.rng = rng
         self.n_in = n_in
         self.n_out = n_out
-        self.act_func = get_activation(activation)
-        self.act_name = activation
+        self.activation = activation
         self.init = init
+        self.W_regularizer = W_regularizer
+        self.b_regularizer = b_regularizer
 
-        # variables
-        self.W = get_shared(rng, (n_in, n_out), init) if W is None else W
-        self.b = get_shared(rng, (n_out,), 'zero') if b is None else b
+    def connect_to(self, pre_layer=None):
+        if pre_layer is None:
+            assert self.n_in
+            n_in = self.n_in
+        else:
+            n_in = pre_layer.output_shape[-1]
 
-        # params
-        self.train_params.extend([self.W, self.b])
-        self.reg_params.extend([self.W])
+        self.output_shape = (None, self.n_out)
+        self.W = self.init((n_in, self.n_out))
+        self.b = self.init((self.n_out,))
 
-    def __call__(self, input):
-        # outputs
-        output = dot(input, self.W) + self.b
-        output = self.act_func(output)
-
+    def forward(self, input, **kwargs):
+        output = tensor.dot(input, self.W) + self.b
+        output = self.activation(output)
         return output
-
-    def __str__(self):
-        return "Dense"
 
     def to_json(self):
         config = {
             'n_in': self.n_in,
             'n_out': self.n_out,
-            'activation': self.act_name,
-            'init': self.init
+            'activation': self.activation.__name__,
+            'init': self.init.__name__
         }
         return config
 
+    @property
+    def params(self):
+        return self.W, self.b
 
-class Softmax(Layer):
-    def __init__(self, rng, n_in, n_out,
-                 init='glorot_uniform',
-                 W=None, b=None):
-        super(Softmax, self).__init__()
+    @property
+    def regularizers(self):
+        returns = []
 
-        # parameters
-        self.n_in = n_in
-        self.n_out = n_out
-        self.init = init
+        if self.W_regularizer:
+            returns.append(self.W_regularizer(self.W))
 
-        # variables
-        self.W = get_shared(rng, (n_in, n_out), init) if W is None else W
-        self.b = get_shared(rng, (n_out,), 'zero') if b is None else b
+        if self.b_regularizer:
+            returns.append(self.b_regularizer(self.b))
 
-        # params
-        self.train_params.extend([self.W, self.b])
-        self.reg_params.extend([self.W])
+        return returns
 
-    def __call__(self, input):
-        # outputs
-        output = tensor.nnet.softmax(dot(input, self.W) + self.b)
-        return output
 
-    def __str__(self):
-        return 'Softmax'
-
-    def to_json(self):
-        config = {
-            'n_in': self.n_in,
-            'n_out': self.n_out,
-            'init': self.init
-        }
-        return config
-
+class Softmax(Dense):
+    def __init__(self, n_out, n_in=None, init=GlorotUniform(), W_regularizer=None, b_regularizer=None):
+        super(Softmax, self).__init__(n_out, n_in, activation=SoftmaxAct(), init=init,
+                                      W_regularizer=W_regularizer, b_regularizer=b_regularizer)
 
