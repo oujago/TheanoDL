@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 
 
-import numpy as np
-from theano import shared
 from theano import tensor
 
-from .variables import dtype
 
+class Regularizer(object):
+    def __init__(self, l1=0., l2=0.):
+        self.l1 = l1
+        self.l2 = l2
 
-def get_regularization(regularizer, params, scale):
-    if scale == 0.:
-        return tensor.sum(shared(value=np.array(0., dtype=dtype)))
+    def __call__(self, param):
+        return self.call(param)
 
-    regularizer = regularizer.lower()
+    def call(self, param):
+        regularization = 0.
 
-    if regularizer == 'l1':
-        return tensor.sum([tensor.sum(tensor.abs_(ps)) for ps in params]) * scale
+        if self.l1 > 0.:
+            regularization += tensor.sum(tensor.abs_(param) * self.l1)
 
-    elif regularizer == 'l2':
-        return tensor.sum([tensor.sum(tensor.sqr(ps)) for ps in params]) * scale
+        if self.l2 > 0.:
+            regularization += tensor.sum(tensor.square(param) * self.l2)
 
-    else:
-        raise ValueError("Unknown regularizer: %s" % regularizer)
+        return regularization

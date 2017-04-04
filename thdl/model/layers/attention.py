@@ -3,8 +3,8 @@
 from theano import tensor
 
 from .base import Layer
-from ..activations import get_activation
-from ..initializations import get_shared
+from ..activation import get_activation
+from ..initialization import get_shared
 
 dot = tensor.dot
 

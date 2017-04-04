@@ -4,10 +4,8 @@ from theano import tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 from .base import Layer
-from ..activations import get_activation
-from ..initializations import get_shared
-
-dot = tensor.dot
+from .. import activation
+from .. import initialization
 
 
 class Activation(Layer):
@@ -72,7 +70,7 @@ class Dropout(Layer):
 
 
 class Dense(Layer):
-    def __init__(self, rng, n_in, n_out,
+    def __init__(self, n_out, n_in=None,
                  activation='tanh', init='glorot_uniform',
                  W=None, b=None):
         """

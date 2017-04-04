@@ -4,7 +4,7 @@
 from theano import shared
 
 from .base import Layer
-from ..initializations import get_shared
+from ..initialization import get_shared
 
 
 class Embedding(Layer):

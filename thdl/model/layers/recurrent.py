@@ -5,14 +5,14 @@ import numpy as np
 from theano import scan
 from theano import tensor
 
+from thdl.model.utils.variables import dtype
+from thdl.model.utils.variables import get_clstm_variables
+from thdl.model.utils.variables import get_gru_variables
+from thdl.model.utils.variables import get_lstm_variables
+from thdl.model.utils.variables import get_plstm_variables
+from thdl.model.utils.variables import get_rnn_variables
 from .base import Layer
-from ..activations import get_activation
-from ..variables import dtype
-from ..variables import get_clstm_variables
-from ..variables import get_gru_variables
-from ..variables import get_lstm_variables
-from ..variables import get_plstm_variables
-from ..variables import get_rnn_variables
+from ..activation import get_activation
 
 dot = tensor.dot
 

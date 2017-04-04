@@ -5,8 +5,8 @@ from theano import scan
 from theano import tensor
 from theano.tensor.signal.pool import pool_2d
 
+from thdl.model.utils.variables import dtype
 from ..layers import Layer
-from ..variables import dtype
 
 
 class NOR(Layer):

@@ -6,8 +6,8 @@ from collections import OrderedDict
 from theano import function
 from theano import tensor
 
-from thdl.model.objectives import get_loss
-from thdl.model.optimizers import get_updates
+from thdl.model.objective import get_loss
+from thdl.model.optimizer import get_updates
 from thdl.model.regularization import get_regularization
 
 
