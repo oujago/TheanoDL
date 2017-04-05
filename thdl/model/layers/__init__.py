@@ -1,24 +1,33 @@
 # -*- coding: utf-8 -*-
 
-from .attention import Attention
+# base
 from .base import Layer
-from .basic import Activation
+
+# basic
 from .basic import Dense
-from .basic import Dropout
 from .basic import Softmax
-from .conv import Conv2D
-from .conv import Pool2D
-from .convolutional_recurrent import NLPAsymConv
-from .convolutional_recurrent import NLPConv
-from .convolutional_recurrent import NLPConvPooling
-from .embedding import Embedding
-from .input import XY
-from .normalization import BatchNormal
-from .other import ToolBox
-from .recurrent import Bidirectional
-from .recurrent import CLSTM
-from .recurrent import GRU
-from .recurrent import LSTM
-from .recurrent import PLSTM
+
+# regularization
+from .regularization import Dropout
+
+# convolution
+from .convolution import Convolution
+
+# pooling
+from .pooling import Pooling
+
+# recurrent
 from .recurrent import SimpleRNN
-from .recurrent import get_rnn
+from .recurrent import LSTM
+from .recurrent import GRU
+from .recurrent import PLSTM
+from .recurrent import CLSTM
+
+# bidirectional
+from .bidirectional import Bidirectional
+
+# other
+from .shape import Flatten
+from .shape import Reshape
+from .shape import Mean
+from .shape import Dimshuffle

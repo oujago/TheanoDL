@@ -7,4 +7,4 @@ from . import layers
 from . import objective
 from . import optimizer
 from . import regularization
-from .main import Model
+from .network import Model

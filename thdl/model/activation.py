@@ -19,6 +19,12 @@ class Sigmoid(Activation):
         return tensor.nnet.sigmoid(input)
 
 
+class HardSigmoid(Activation):
+
+    def call(self, input):
+        return tensor.nnet.hard_sigmoid(input)
+
+
 class Tanh(Activation):
     """Tanh activation function :math:`\\varphi(x) = \\tanh(x)`
     """
