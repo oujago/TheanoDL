@@ -13,3 +13,13 @@ from .convolution import Convolution
 # pooling
 from .pooling import Pooling
 
+# recurrent
+from .recurrent import SimpleRNN
+from .recurrent import LSTM
+from .recurrent import GRU
+from .recurrent import PLSTM
+from .recurrent import CLSTM
+
+# bidirectional
+from .bidirectional import Bidirectional
+

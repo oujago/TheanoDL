@@ -5,79 +5,83 @@ import numpy as np
 from theano import scan
 from theano import tensor
 
-from thdl.model.utils.variables import dtype
-from thdl.model.utils.variables import get_clstm_variables
-from thdl.model.utils.variables import get_gru_variables
-from thdl.model.utils.variables import get_lstm_variables
-from thdl.model.utils.variables import get_plstm_variables
-from thdl.model.utils.variables import get_rnn_variables
 from .base import Layer
-from ..activation import get_activation
-
-dot = tensor.dot
-
-
-class Recurrent(object):
-    def __init__(self, rng, n_in, n_out,
-                 bptt=-1, fixed=False, backward=False, return_sequence=True,
-                 ):
-        # parameters
-        self.n_in = n_in
-        self.n_out = n_out
-        self.bptt = bptt
-        self.fixed = fixed
-        self.backward = backward
-        self.return_sequence = return_sequence
+from ..activation import HardSigmoid
+from ..activation import Tanh
+from ..initialization import GlorotUniform
+from ..initialization import Orthogonal
+from ..utils import variables
+from ..utils.random import get_dtype
 
 
-class SimpleRNN(Layer):
-    def __init__(self, rng, n_in, n_out, mask=None,
-                 init='glorot_uniform', inner_init='orthogonal',
-                 activation='tanh',
-                 bptt=-1, fixed=False, backward=False, return_sequence=True,
-                 params=None):
-        super(SimpleRNN, self).__init__()
+class Recurrent(Layer):
+    def __init__(self, n_out, n_in=None, init=GlorotUniform(), inner_init=Orthogonal(), activation=Tanh(),
+                 W_regularizer=None, U_regularizer=None, b_regularizer=None,
+                 bptt=-1, fixed=False, backward=False, return_sequence=True, bias=True):
+        super(Recurrent, self).__init__()
 
         # parameters
         self.n_in = n_in
         self.n_out = n_out
-        self.act_func = get_activation(activation)
-        self.act_name = activation
+        self.activation = activation
         self.init = init
         self.inner_init = inner_init
+        self.W_regularizer = W_regularizer
+        self.U_regularizer = U_regularizer
+        self.b_regularizer = b_regularizer
         self.bptt = bptt
         self.fixed = fixed
         self.backward = backward
         self.return_sequence = return_sequence
+        self.bias = bias
 
-        # variables
-        self.h0 = None
-        if params is None:
-            self.W, self.U, self.b = get_rnn_variables(rng, n_in, n_out, init, inner_init)
+    def connect_to(self, pre_layer=None):
+        # input shape
+        if pre_layer is None:
+            assert self.n_in is not None
+            n_in = self.n_in
+            n_batch = None
         else:
-            self.W, self.U, self.b = params
+            self.output_shape = pre_layer.output_shape[-1:] + (self.n_out,)
+            n_in = pre_layer.output_shape[-1]
+            n_batch = pre_layer.output_shape[0]
 
-        # params
-        self.train_params.extend([self.W, self.U, self.b])
-        self.reg_params.extend([self.W, self.U])
+        # output_shape
+        if self.return_sequence:
+            self.output_shape = (n_batch, n_in, self.n_out)
+        else:
+            self.output_shape = (n_batch, self.n_out)
 
-    def fixed_step(self, *args):
-        h = self.h0
-        for x_in in args:
-            h = self.act_func(dot(x_in, self.W) + dot(h, self.U) + self.b)
-        return h
+        return n_in
 
-    def unfixed_step(self, x_in, pre_h):
-        return self.act_func(dot(x_in, self.W) + dot(pre_h, self.U) + self.b)
+    def to_json(self):
+        config = {
+            'n_in': self.n_in,
+            'n_out': self.n_out,
+            'init': self.init,
+            'inner_init': self.inner_init,
+            'activation': self.activation,
+            'W_regularizer': self.W_regularizer,
+            'U_regularizer': self.U_regularizer,
+            'b_regularizer': self.b_regularizer,
+            'bptt': self.bptt,
+            'fixed': self.fixed,
+            'return_sequence': self.return_sequence,
+            'backward': self.backward,
+            'bias': self.bias,
+        }
+        return config
 
-    def __call__(self, input):
+    def get_forward(self, input, outputs_info, unfixed_step, fixed_step, index=None):
         # input
         if input.ndim == 3:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), input.shape[0], self.n_out)
+            for info in outputs_info:
+                info = tensor.alloc(np.cast[get_dtype()](0.), input.shape[0], self.n_out)
             input = input.dimshuffle((1, 0, 2))
 
         elif input.ndim == 2:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
+            for info in outputs_info:
+                info = tensor.alloc(np.cast[get_dtype()](0.), self.n_out)
             input = input
 
         else:
@@ -91,10 +95,15 @@ class SimpleRNN(Layer):
             assert self.bptt > 0
             taps = list(range(-self.bptt + 1, 1))
             sequences = [dict(input=input, taps=taps)]
-            hs, _ = scan(fn=self.fixed_step, sequences=sequences)
+            outs, _ = scan(fn=fixed_step, sequences=sequences)
         else:
-            hs, _ = scan(fn=self.unfixed_step, sequences=input, outputs_info=self.h0,
-                         truncate_gradient=self.bptt)
+            outs, _ = scan(fn=unfixed_step, sequences=input, outputs_info=outputs_info,
+                           truncate_gradient=self.bptt)
+
+        if index:
+            hs = outs[index]
+        else:
+            hs = outs
 
         # return
         if self.backward:
@@ -112,182 +121,189 @@ class SimpleRNN(Layer):
             else:
                 return hs[-1]
 
-    def __str__(self):
-        return "SimpleRNN"
+    def get_regularizers(self, W_weights, U_weights, b_weights):
+        returns = []
+
+        if self.W_regularizer:
+            returns.extend([self.W_regularizer(W) for W in W_weights])
+
+        if self.U_regularizer:
+            returns.extend([self.U_regularizer(U) for U in U_weights])
+
+        if self.b_regularizer and self.bias:
+            returns.extend([self.b_regularizer(U) for b in b_weights])
+
+        return returns
+
+
+class GatedRecurrent(Recurrent):
+    def __init__(self, gate_activation=HardSigmoid(), **kwargs):
+        super(GatedRecurrent, self).__init__(**kwargs)
+
+        self.gate_activation = gate_activation
 
     def to_json(self):
+        base_config = super(GatedRecurrent, self).to_json()
         config = {
-            'n_in': self.n_in,
-            'n_out': self.n_out,
-            'init': self.init,
-            'inner_init': self.inner_init,
-            'activation': self.act_name,
-            'bptt': self.bptt,
-            'fixed': self.fixed,
-            'return_sequence': self.return_sequence,
-            'backward': self.backward,
-
+            "gate_activation": self.gate_activation
         }
+        config.update(base_config)
         return config
 
 
-class LSTM(Layer):
-    def __init__(self, rng, n_in, n_out, mask=None,
-                 init='glorot_uniform', inner_init='orthogonal',
-                 activation='tanh', gate_activation='sigmoid',
-                 bptt=-1, fixed=False, backward=False, return_sequence=True, bias=True,
-                 params=None):
-        super(LSTM, self).__init__()
+class SimpleRNN(Recurrent):
+    def __init__(self, **kwargs):
+        super(SimpleRNN, self).__init__(**kwargs)
 
-        # parameters
-        self.n_in = n_in
-        self.n_out = n_out
-        self.init = init
-        self.inner_init = inner_init
-        self.gate_act_func = get_activation(gate_activation)
-        self.act_func = get_activation(activation)
-        self.gate_act_name = gate_activation
-        self.act_name = activation
-        self.bptt = bptt
-        self.fixed = fixed
-        self.backward = backward
-        self.return_sequence = return_sequence
-        self.mask = mask
-        self.bias = bias
-        if mask is not None:
-            self.masks.append(mask)
+    def connect_to(self, pre_layer=None):
+        n_in = super(SimpleRNN, self).connect_to(pre_layer)
+
+        # variables
+        self.h0 = None
+        self.W, self.U, self.b = variables.rnn_variables(n_in, self.n_out, self.init, self.inner_init)
+
+    def forward(self, input, **kwargs):
+        return self.get_forward(input, [self.h0], self.unfixed_step, self.fixed_step)
+
+    def fixed_step(self, *args):
+        h = self.h0
+        for x_in in args:
+            out = tensor.dot(x_in, self.W) + tensor.dot(h, self.U) + self.b
+            h = self.activation(out)
+        return h
+
+    def unfixed_step(self, x_in, pre_h):
+        out = tensor.dot(x_in, self.W) + tensor.dot(pre_h, self.U) + self.b
+        return self.activation(out)
+
+    @property
+    def params(self):
+        if self.bias:
+            return self.W, self.U, self.b
+        else:
+            return self.W, self.U
+
+    @property
+    def regularizers(self):
+        return self.get_regularizers([self.W], [self.U], [self.b])
+
+
+class LSTM(GatedRecurrent):
+    def __init__(self, **kwargs):
+        super(LSTM, self).__init__(**kwargs)
+
+    def connect_to(self, pre_layer=None):
+        n_in = super(LSTM, self).connect_to(pre_layer)
 
         # variables
         self.h0 = None
         self.c0 = None
 
-        if params:
-            self.f_x2h_W, self.f_h2h_W, self.f_h_b, \
-            self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
-            self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-            self.o_x2h_W, self.o_h2h_W, self.o_h_b = params
-        else:
-            self.f_x2h_W, self.f_h2h_W, self.f_h_b, \
-            self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
-            self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-            self.o_x2h_W, self.o_h2h_W, self.o_h_b = get_lstm_variables(rng, n_in, n_out, init, inner_init)
+        self.f_x2h_W, self.f_h2h_W, self.f_h_b, \
+        self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
+        self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
+        self.o_x2h_W, self.o_h2h_W, self.o_h_b = \
+            variables.lstm_variables(n_in, self.n_out, self.init, self.inner_init)
 
-        # params
-        self.train_params.extend([self.f_x2h_W, self.f_h2h_W,
-                                  self.i_x2h_W, self.i_h2h_W,
-                                  self.g_x2h_W, self.g_h2h_W,
-                                  self.o_x2h_W, self.o_h2h_W, ])
-        if bias:
-            self.train_params.extend([self.f_h_b, self.i_h_b, self.g_h_b, self.o_h_b])
-        self.reg_params.extend([self.f_x2h_W, self.f_h2h_W,
-                                self.i_x2h_W, self.i_h2h_W,
-                                self.g_x2h_W, self.g_h2h_W,
-                                self.o_x2h_W, self.o_h2h_W])
+    def forward(self, input, **kwargs):
+        return self.get_forward(input, [self.h0, self.c0], self.unfixed_step, self.fixed_step, 1)
 
     def fixed_step(self, *args):
         h, c = self.h0, self.c0
         for x_in in args:
-            f = self.gate_act_func(dot(x_in, self.f_x2h_W) + dot(h, self.f_h2h_W) + self.f_h_b)
-            i = self.gate_act_func(dot(x_in, self.i_x2h_W) + dot(h, self.i_h2h_W) + self.i_h_b)
-            o = self.gate_act_func(dot(x_in, self.o_x2h_W) + dot(h, self.o_h2h_W) + self.o_h_b)
-            g = self.act_func(dot(x_in, self.g_x2h_W) + dot(h, self.g_h2h_W) + self.g_h_b)
+            f = self.gate_activation(tensor.dot(x_in, self.f_x2h_W) + tensor.dot(h, self.f_h2h_W) + self.f_h_b)
+            i = self.gate_activation(tensor.dot(x_in, self.i_x2h_W) + tensor.dot(h, self.i_h2h_W) + self.i_h_b)
+            o = self.gate_activation(tensor.dot(x_in, self.o_x2h_W) + tensor.dot(h, self.o_h2h_W) + self.o_h_b)
+            g = self.activation(tensor.dot(x_in, self.g_x2h_W) + tensor.dot(h, self.g_h2h_W) + self.g_h_b)
             c = f * c + i * g
-            h = o * self.act_func(c)
+            h = o * self.activation(c)
         return c, h
 
     def unfixed_step(self, x_in, pre_c, pre_h):
-        f = self.gate_act_func(dot(x_in, self.f_x2h_W) + dot(pre_h, self.f_h2h_W) + self.f_h_b)
-        i = self.gate_act_func(dot(x_in, self.i_x2h_W) + dot(pre_h, self.i_h2h_W) + self.i_h_b)
-        o = self.gate_act_func(dot(x_in, self.o_x2h_W) + dot(pre_h, self.o_h2h_W) + self.o_h_b)
-        g = self.act_func(dot(x_in, self.g_x2h_W) + dot(pre_h, self.g_h2h_W) + self.g_h_b)
+        f = self.gate_activation(tensor.dot(x_in, self.f_x2h_W) + tensor.dot(pre_h, self.f_h2h_W) + self.f_h_b)
+        i = self.gate_activation(tensor.dot(x_in, self.i_x2h_W) + tensor.dot(pre_h, self.i_h2h_W) + self.i_h_b)
+        o = self.gate_activation(tensor.dot(x_in, self.o_x2h_W) + tensor.dot(pre_h, self.o_h2h_W) + self.o_h_b)
+        g = self.activation(tensor.dot(x_in, self.g_x2h_W) + tensor.dot(pre_h, self.g_h2h_W) + self.g_h_b)
         c = f * pre_c + i * g
-        h = o * self.act_func(c)
+        h = o * self.activation(c)
         return c, h
 
-    def mask_unfixed_step(self, x_in, mask, pre_c, pre_h):
-        c, h = self.unfixed_step(x_in, pre_c, pre_h)
-
-        c = tensor.switch(mask, c, pre_c)
-        h = tensor.switch(mask, h, pre_h)
-
-        return c, h
-
-    def __call__(self, input, mask=None):
-        # input
-        if input.ndim == 3:
-            self.h0 = tensor.alloc(np.cast[dtype](0.), input.shape[0], self.n_out)
-            self.c0 = tensor.alloc(np.cast[dtype](0.), input.shape[0], self.n_out)
-            input = input.dimshuffle(1, 0, 2)
-            if self.mask is not None:
-                mask = self.mask.dimshuffle(1, 0, 'x')
-
-        elif input.ndim == 2:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            self.c0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            input = input
-            if self.mask is not None:
-                mask = self.mask.dimshuffle(0, 'x')
-
+    @property
+    def params(self):
+        if self.bias:
+            return self.f_x2h_W, self.f_h2h_W, self.f_h_b, \
+                   self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
+                   self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
+                   self.o_x2h_W, self.o_h2h_W, self.o_h_b
         else:
-            raise ValueError("Unknown input dimension: %d" % input.ndim)
+            return self.f_x2h_W, self.f_h2h_W, \
+                   self.i_x2h_W, self.i_h2h_W, \
+                   self.g_x2h_W, self.g_h2h_W, \
+                   self.o_x2h_W, self.o_h2h_W,
 
-        if self.backward:
-            input = input[::-1]
+    @property
+    def regularizers(self):
+        W_weights = [self.f_x2h_W, self.i_x2h_W, self.g_x2h_W, self.o_x2h_W]
+        U_weights = [self.f_h2h_W, self.i_h2h_W, self.g_h2h_W, self.o_h2h_W]
+        b_weights = [self.f_h_b, self.i_h_b, self.g_h_b, self.o_h_b]
 
-        # outputs
-        if self.fixed:
-            assert self.bptt > 0
-            taps = list(range(-self.bptt + 1, 1))
-            sequences = [dict(input=input, taps=taps)]
-            [cs, hs], _ = scan(fn=self.fixed_step, sequences=sequences)
+        return self.get_regularizers(W_weights, U_weights, b_weights)
+
+
+class GRU(GatedRecurrent):
+    def __init__(self, **kwargs):
+        super(GRU, self).__init__(**kwargs)
+
+    def connect_to(self, pre_layer=None):
+        n_in = super(GRU, self).connect_to(pre_layer)
+
+        # variables
+        self.h0 = None
+        self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
+        self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
+        self.c_x2h_W, self.c_h2h_W, self.c_h_b = \
+            variables.gru_variables(n_in, self.n_out, self.init, self.inner_init)
+
+    def fixed_step(self, *args):
+        h = self.h0
+        for x_in in args:
+            r = self.gate_activation(tensor.dot(x_in, self.r_x2h_W) + tensor.dot(h, self.r_h2h_W) + self.r_h_b)
+            z = self.gate_activation(tensor.dot(x_in, self.z_x2h_W) + tensor.dot(h, self.z_h2h_W) + self.z_h_b)
+            c = self.activation(tensor.dot(x_in, self.c_x2h_W) + tensor.dot(r * h, self.c_h2h_W) + self.c_h_b)
+            h = z * h + (tensor.ones_like(z) - z) * c
+        return h
+
+    def unfixed_step(self, x_in, pre_h):
+        r = self.gate_activation(tensor.dot(x_in, self.r_x2h_W) + tensor.dot(pre_h, self.r_h2h_W) + self.r_h_b)
+        z = self.gate_activation(tensor.dot(x_in, self.z_x2h_W) + tensor.dot(pre_h, self.z_h2h_W) + self.z_h_b)
+        c = self.activation(tensor.dot(x_in, self.c_x2h_W) + tensor.dot(r * pre_h, self.c_h2h_W) + self.c_h_b)
+        h = z * pre_h + (tensor.ones_like(z) - z) * c
+        return h
+
+    def forward(self, input, **kwargs):
+        return self.get_forward(input, [self.h0], self.unfixed_step, self.fixed_step)
+
+    @property
+    def params(self):
+        if self.bias:
+            return self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
+                   self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
+                   self.c_x2h_W, self.c_h2h_W, self.c_h_b
         else:
-            if self.mask is not None:
-                seqs = [input, mask]
-                step = self.mask_unfixed_step
-            else:
-                seqs = input
-                step = self.unfixed_step
-            [cs, hs], _ = scan(fn=step, sequences=seqs, outputs_info=[self.c0, self.h0],
-                               truncate_gradient=self.bptt)
+            return self.r_x2h_W, self.r_h2h_W, \
+                   self.z_x2h_W, self.z_h2h_W, \
+                   self.c_x2h_W, self.c_h2h_W,
 
-        # return
-        if input.ndim == 3:
-            if self.return_sequence:
-                if self.backward:
-                    hs = hs[::-1]
-                return hs.dimshuffle(1, 0, 2)
-            else:
-                return hs[-1]
+    @property
+    def regularizers(self):
+        W_weights = [self.r_x2h_W, self.z_x2h_W, self.c_x2h_W]
+        U_weights = [self.r_h2h_W, self.z_h2h_W, self.c_h2h_W]
+        b_weights = [self.r_h_b, self.z_h_b, self.c_h_b]
 
-        if input.ndim == 2:
-            if self.return_sequence:
-                if self.backward:
-                    hs = hs[::-1]
-                return hs
-            else:
-                return hs[-1]
-
-    def __str__(self):
-        return 'LSTM'
-
-    def to_json(self):
-        config = {
-            'n_in': self.n_in,
-            'n_out': self.n_out,
-            'init': self.init,
-            'mask': self.mask,
-            'inner_init': self.inner_init,
-            'activation': self.act_name,
-            'gate_activation': self.gate_act_name,
-            'bptt': self.bptt,
-            'fixed': self.fixed,
-            'return_sequence': self.return_sequence,
-            'backward': self.backward
-        }
-        return config
+        return self.get_regularizers(W_weights, U_weights, b_weights)
 
 
-class PLSTM(Layer):
+class PLSTM(GatedRecurrent):
     """
     Peephole LSTM
 
@@ -299,140 +315,91 @@ class PLSTM(Layer):
         International Joint Conference on. Vol. 3. IEEE, 2000.
     """
 
-    def __init__(self, rng, n_in, n_out,
-                 init='glorot_uniform', inner_init='orthogonal', peephole_init='uniform',
-                 activation='tanh', gate_activation='sigmoid',
-                 bptt=-1, fixed=False, backward=False, return_sequence=True,
-                 params=None):
-        super(PLSTM, self).__init__()
+    def __init__(self, peephole_init=GlorotUniform(), p_regularizer=None, **kwargs):
+        super(PLSTM, self).__init__(*kwargs)
 
-        # parameters
-        self.n_in = n_in
-        self.n_out = n_out
-        self.init = init
-        self.inner_init = inner_init
         self.peephole_init = peephole_init
-        self.gate_act_func = get_activation(gate_activation)
-        self.act_func = get_activation(activation)
-        self.gate_act_name = gate_activation
-        self.act_name = activation
+        self.p_regularizer = p_regularizer
 
-        self.bptt = bptt
-        self.fixed = fixed
-        self.backward = backward
-        self.return_sequence = return_sequence
+    def connect_to(self, pre_layer=None):
+        n_in = super(PLSTM, self).connect_to(pre_layer)
 
         # variables
         self.h0 = None
         self.c0 = None
 
-        if params:
-            self.f_x2h_W, self.f_h2h_W, self.p_f, self.f_h_b, \
-            self.i_x2h_W, self.i_h2h_W, self.p_i, self.i_h_b, \
-            self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-            self.o_x2h_W, self.o_h2h_W, self.p_o, self.o_h_b = params
-        else:
-            self.f_x2h_W, self.f_h2h_W, self.p_f, self.f_h_b, \
-            self.i_x2h_W, self.i_h2h_W, self.p_i, self.i_h_b, \
-            self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-            self.o_x2h_W, self.o_h2h_W, self.p_o, self.o_h_b = \
-                get_plstm_variables(rng, n_in, n_out, init, inner_init, peephole_init)
+        self.f_x2h_W, self.f_h2h_W, self.p_f, self.f_h_b, \
+        self.i_x2h_W, self.i_h2h_W, self.p_i, self.i_h_b, \
+        self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
+        self.o_x2h_W, self.o_h2h_W, self.p_o, self.o_h_b = \
+            variables.plstm_variables(n_in, self.n_out, self.init, self.inner_init, self.peephole_init)
 
-        # params
-        self.train_params.extend([self.f_x2h_W, self.f_h2h_W, self.p_f, self.f_h_b,
-                                  self.i_x2h_W, self.i_h2h_W, self.p_i, self.i_h_b,
-                                  self.g_x2h_W, self.g_h2h_W, self.g_h_b,
-                                  self.o_x2h_W, self.o_h2h_W, self.p_o, self.o_h_b])
-        self.reg_params.extend([self.f_x2h_W, self.f_h2h_W, self.p_f,
-                                self.i_x2h_W, self.i_h2h_W, self.p_i,
-                                self.g_x2h_W, self.g_h2h_W,
-                                self.o_x2h_W, self.o_h2h_W, self.p_o])
+    def forward(self, input, **kwargs):
+        return self.get_forward(input, [self.h0], self.unfixed_step, self.fixed_step)
 
     def fixed_step(self, *args):
         h, c = self.h0, self.c0
         for x_in in args:
-            f = self.gate_act_func(dot(x_in, self.f_x2h_W) + dot(h, self.f_h2h_W) + c * self.p_f + self.f_h_b)
-            i = self.gate_act_func(dot(x_in, self.i_x2h_W) + dot(h, self.i_h2h_W) + c * self.p_i + self.i_h_b)
-            o = self.gate_act_func(dot(x_in, self.o_x2h_W) + dot(h, self.o_h2h_W) + c * self.p_o + self.o_h_b)
-            g = self.act_func(dot(x_in, self.g_x2h_W) + dot(h, self.g_h2h_W) + self.g_h_b)
+            f = self.gate_activation(
+                tensor.dot(x_in, self.f_x2h_W) + tensor.dot(h, self.f_h2h_W) + c * self.p_f + self.f_h_b)
+            i = self.gate_activation(
+                tensor.dot(x_in, self.i_x2h_W) + tensor.dot(h, self.i_h2h_W) + c * self.p_i + self.i_h_b)
+            o = self.gate_activation(
+                tensor.dot(x_in, self.o_x2h_W) + tensor.dot(h, self.o_h2h_W) + c * self.p_o + self.o_h_b)
+            g = self.activation(tensor.dot(x_in, self.g_x2h_W) + tensor.dot(h, self.g_h2h_W) + self.g_h_b)
             c = f * c + i * g
-            h = o * self.act_func(c)
+            h = o * self.activation(c)
         return c, h
 
     def unfixed_step(self, x_in, pre_c, pre_h):
-        f = self.gate_act_func(dot(x_in, self.f_x2h_W) + dot(pre_h, self.f_h2h_W) + pre_c * self.p_f + self.f_h_b)
-        i = self.gate_act_func(dot(x_in, self.i_x2h_W) + dot(pre_h, self.i_h2h_W) + pre_c * self.p_i + self.i_h_b)
-        o = self.gate_act_func(dot(x_in, self.o_x2h_W) + dot(pre_h, self.o_h2h_W) + pre_c * self.p_o + self.o_h_b)
-        g = self.act_func(dot(x_in, self.g_x2h_W) + dot(pre_h, self.g_h2h_W) + self.g_h_b)
+        f = self.gate_activation(
+            tensor.dot(x_in, self.f_x2h_W) + tensor.dot(pre_h, self.f_h2h_W) + pre_c * self.p_f + self.f_h_b)
+        i = self.gate_activation(
+            tensor.dot(x_in, self.i_x2h_W) + tensor.dot(pre_h, self.i_h2h_W) + pre_c * self.p_i + self.i_h_b)
+        o = self.gate_activation(
+            tensor.dot(x_in, self.o_x2h_W) + tensor.dot(pre_h, self.o_h2h_W) + pre_c * self.p_o + self.o_h_b)
+        g = self.activation(tensor.dot(x_in, self.g_x2h_W) + tensor.dot(pre_h, self.g_h2h_W) + self.g_h_b)
         c = f * pre_c + i * g
-        h = o * self.act_func(c)
+        h = o * self.activation(c)
         return c, h
 
-    def __call__(self, input):
-        # input
-        if input.ndim == 3:
-            self.h0 = tensor.alloc(np.cast[dtype](0.), input.shape[0], self.n_out)
-            self.c0 = tensor.alloc(np.cast[dtype](0.), input.shape[0], self.n_out)
-            input = input.dimshuffle((1, 0, 2))
-
-        elif input.ndim == 2:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            self.c0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            input = input
-
-        else:
-            raise ValueError("Unknown input dimension: %d" % input.ndim)
-
-        if self.backward:
-            input = input[::-1]
-
-        # outputs
-        if self.fixed:
-            assert self.bptt > 0
-            taps = list(range(-self.bptt + 1, 1))
-            sequences = [dict(input=input, taps=taps)]
-            [cs, hs], _ = scan(fn=self.fixed_step, sequences=sequences)
-        else:
-            [cs, hs], _ = scan(fn=self.unfixed_step, sequences=input, outputs_info=[self.c0, self.h0],
-                               truncate_gradient=self.bptt)
-
-        # return
-        if self.backward:
-            hs = hs[::-1]
-
-        if input.ndim == 3:
-            if self.return_sequence:
-                return hs.dimshuffle(1, 0, 2)
-            else:
-                return hs[-1]
-
-        if input.ndim == 2:
-            if self.return_sequence:
-                return hs
-            else:
-                return hs[-1]
-
-    def __str__(self):
-        return 'PeepholeLSTM'
-
     def to_json(self):
+        base_config = super(PLSTM, self).to_json()
         config = {
-            'n_in': self.n_in,
-            'n_out': self.n_out,
-            'init': self.init,
-            'inner_init': self.inner_init,
             'peephole_init': self.peephole_init,
-            'activation': self.act_name,
-            'gate_activation': self.gate_act_name,
-            'bptt': self.bptt,
-            'fixed': self.fixed,
-            'return_sequence': self.return_sequence,
-            'backward': self.backward
+            'p_regularizer': self.p_regularizer,
         }
+        config.update(base_config)
         return config
 
+    @property
+    def params(self):
+        if self.bias:
+            return self.f_x2h_W, self.f_h2h_W, self.p_f, self.f_h_b, \
+                   self.i_x2h_W, self.i_h2h_W, self.p_i, self.i_h_b, \
+                   self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
+                   self.o_x2h_W, self.o_h2h_W, self.p_o, self.o_h_b
+        else:
+            return self.f_x2h_W, self.f_h2h_W, self.p_f, \
+                   self.i_x2h_W, self.i_h2h_W, self.p_i, \
+                   self.g_x2h_W, self.g_h2h_W, \
+                   self.o_x2h_W, self.o_h2h_W, self.p_o,
 
-class CLSTM(Layer):
+    @property
+    def regularizers(self):
+        W_weights = [self.f_x2h_W, self.i_x2h_W, self.g_x2h_W, self.o_x2h_W]
+        U_weights = [self.f_h2h_W, self.i_h2h_W, self.g_h2h_W, self.o_h2h_W]
+        b_weights = [self.f_h_b, self.i_h_b, self.g_h_b, self.o_h_b]
+        returns = self.get_regularizers(W_weights, U_weights, b_weights)
+
+        if self.p_regularizer:
+            for peephole in [self.p_f, self.p_i, self.p_o]:
+                returns.append(self.p_regularizer(peephole))
+
+        return returns
+
+
+class CLSTM(GatedRecurrent):
     """
     Coupled LSTM
 
@@ -444,313 +411,58 @@ class CLSTM(Layer):
 
     """
 
-    def __init__(self, rng, n_in, n_out,
-                 init='glorot_uniform', inner_init='orthogonal',
-                 activation='tanh', gate_activation='sigmoid',
-                 bptt=-1, fixed=False, backward=False, return_sequence=True,
-                 params=None):
-        super(CLSTM, self).__init__()
+    def __init__(self, **kwargs):
+        super(CLSTM, self).__init__(**kwargs)
 
-        # parameters
-        self.n_in = n_in
-        self.n_out = n_out
-        self.init = init
-        self.inner_init = inner_init
-        self.gate_act_func = get_activation(gate_activation)
-        self.act_func = get_activation(activation)
-        self.gate_act_name = gate_activation
-        self.act_name = activation
-        self.bptt = bptt
-        self.fixed = fixed
-        self.backward = backward
-        self.return_sequence = return_sequence
+    def connect_to(self, pre_layer=None):
+        n_in = super(CLSTM, self).connect_to(pre_layer)
 
         # variables
         self.h0 = None
         self.c0 = None
 
-        if params:
-            self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
-            self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-            self.o_x2h_W, self.o_h2h_W, self.o_h_b = params
-        else:
-            self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
-            self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-            self.o_x2h_W, self.o_h2h_W, self.o_h_b = get_clstm_variables(rng, n_in, n_out, init, inner_init)
-
-        # params
-        self.train_params.extend([self.i_x2h_W, self.i_h2h_W, self.i_h_b,
-                                  self.g_x2h_W, self.g_h2h_W, self.g_h_b,
-                                  self.o_x2h_W, self.o_h2h_W, self.o_h_b])
-        self.reg_params.extend([self.i_x2h_W, self.i_h2h_W,
-                                self.g_x2h_W, self.g_h2h_W,
-                                self.o_x2h_W, self.o_h2h_W])
+        self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
+        self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
+        self.o_x2h_W, self.o_h2h_W, self.o_h_b = \
+            variables.clstm_variables(n_in, self.n_out, self.init, self.inner_init)
 
     def fixed_step(self, *args):
         h, c = self.h0, self.c0
         for x_in in args:
-            i = self.gate_act_func(dot(x_in, self.i_x2h_W) + dot(h, self.i_h2h_W) + self.i_h_b)
-            o = self.gate_act_func(dot(x_in, self.o_x2h_W) + dot(h, self.o_h2h_W) + self.o_h_b)
-            g = self.act_func(dot(x_in, self.g_x2h_W) + dot(h, self.g_h2h_W) + self.g_h_b)
+            i = self.gate_activation(tensor.dot(x_in, self.i_x2h_W) + tensor.dot(h, self.i_h2h_W) + self.i_h_b)
+            o = self.gate_activation(tensor.dot(x_in, self.o_x2h_W) + tensor.dot(h, self.o_h2h_W) + self.o_h_b)
+            g = self.activation(tensor.dot(x_in, self.g_x2h_W) + tensor.dot(h, self.g_h2h_W) + self.g_h_b)
             c = (tensor.ones_like(i) - i) * c + i * g
-            h = o * self.act_func(c)
+            h = o * self.activation(c)
         return c, h
 
     def unfixed_step(self, x_in, pre_c, pre_h):
-        i = self.gate_act_func(dot(x_in, self.i_x2h_W) + dot(pre_h, self.i_h2h_W) + self.i_h_b)
-        o = self.gate_act_func(dot(x_in, self.o_x2h_W) + dot(pre_h, self.o_h2h_W) + self.o_h_b)
-        g = self.act_func(dot(x_in, self.g_x2h_W) + dot(pre_h, self.g_h2h_W) + self.g_h_b)
+        i = self.gate_activation(tensor.dot(x_in, self.i_x2h_W) + tensor.dot(pre_h, self.i_h2h_W) + self.i_h_b)
+        o = self.gate_activation(tensor.dot(x_in, self.o_x2h_W) + tensor.dot(pre_h, self.o_h2h_W) + self.o_h_b)
+        g = self.activation(tensor.dot(x_in, self.g_x2h_W) + tensor.dot(pre_h, self.g_h2h_W) + self.g_h_b)
         c = (tensor.ones_like(i) - i) * pre_c + i * g
-        h = o * self.act_func(c)
+        h = o * self.activation(c)
         return c, h
 
-    def __call__(self, input):
-        # input
-        if input.ndim == 3:
-            self.h0 = tensor.alloc(np.cast[dtype](0.), input.shape[0], self.n_out)
-            self.c0 = tensor.alloc(np.cast[dtype](0.), input.shape[0], self.n_out)
-            input = input.dimshuffle((1, 0, 2))
+    def forward(self, input, **kwargs):
+        return self.get_forward(input, [self.h0], self.unfixed_step, self.fixed_step)
 
-        elif input.ndim == 2:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            self.c0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            input = input
-
+    @property
+    def params(self):
+        if self.bias:
+            return self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
+                   self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
+                   self.o_x2h_W, self.o_h2h_W, self.o_h_b
         else:
-            raise ValueError("Unknown input dimension: %d" % input.ndim)
+            return self.i_x2h_W, self.i_h2h_W, \
+                   self.g_x2h_W, self.g_h2h_W, \
+                   self.o_x2h_W, self.o_h2h_W,
 
-        if self.backward:
-            input = input[::-1]
+    @property
+    def regularizers(self):
+        W_weights = [self.i_x2h_W, self.g_x2h_W, self.o_x2h_W]
+        U_weights = [self.i_h2h_W, self.g_h2h_W, self.o_h2h_W]
+        b_weights = [self.i_h_b, self.g_h_b, self.o_h_b]
 
-        # outputs
-        if self.fixed:
-            assert self.bptt > 0
-            taps = list(range(-self.bptt + 1, 1))
-            sequences = [dict(input=input, taps=taps)]
-            [cs, hs], _ = scan(fn=self.fixed_step, sequences=sequences)
-        else:
-            [cs, hs], _ = scan(fn=self.unfixed_step, sequences=input, outputs_info=[self.c0, self.h0],
-                               truncate_gradient=self.bptt)
+        return self.get_regularizers(W_weights, U_weights, b_weights)
 
-        # return
-        if self.backward:
-            hs = hs[::-1]
-
-        if input.ndim == 3:
-            if self.return_sequence:
-                return hs.dimshuffle(1, 0, 2)
-            else:
-                return hs[-1]
-
-        if input.ndim == 2:
-            if self.return_sequence:
-                return hs
-            else:
-                return hs[-1]
-
-    def __str__(self):
-        return 'CoupledLSTM'
-
-    def to_json(self):
-        config = {
-            'n_in': self.n_in,
-            'n_out': self.n_out,
-            'init': self.init,
-            'inner_init': self.inner_init,
-            'activation': self.act_name,
-            'gate_activation': self.gate_act_name,
-            'bptt': self.bptt,
-            'fixed': self.fixed,
-            'return_sequence': self.return_sequence,
-            'backward': self.backward
-        }
-        return config
-
-
-class GRU(Layer):
-    def __init__(self, rng, n_in, n_out,
-                 init='glorot_uniform', inner_init='orthogonal',
-                 activation='tanh', gate_activation='sigmoid',
-                 bptt=-1, fixed=False, backward=False, return_sequence=True,
-                 params=None, ):
-        super(GRU, self).__init__()
-
-        # parameters
-        self.n_in = n_in
-        self.n_out = n_out
-        self.gate_act_func = get_activation(gate_activation)
-        self.act_func = get_activation(activation)
-        self.gate_act_name = gate_activation
-        self.act_name = activation
-        self.init = init
-        self.inner_init = inner_init
-        self.bptt = bptt
-        self.fixed = fixed
-        self.backward = backward
-        self.return_sequence = return_sequence
-
-        # variables
-        self.h0 = None
-        if params:
-            self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
-            self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
-            self.c_x2h_W, self.c_h2h_W, self.c_h_b = params
-        else:
-            self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
-            self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
-            self.c_x2h_W, self.c_h2h_W, self.c_h_b = get_gru_variables(rng, n_in, n_out, init, inner_init)
-
-        # params
-        self.train_params.extend([self.r_x2h_W, self.r_h2h_W, self.r_h_b,
-                                  self.z_x2h_W, self.z_h2h_W, self.z_h_b,
-                                  self.c_x2h_W, self.c_h2h_W, self.c_h_b])
-        self.reg_params.extend([self.r_x2h_W, self.r_h2h_W,
-                                self.z_x2h_W, self.z_h2h_W,
-                                self.c_x2h_W, self.c_h2h_W])
-
-    def fixed_step(self, *args):
-        h = self.h0
-        for x_in in args:
-            r = self.gate_act_func(dot(x_in, self.r_x2h_W) + dot(h, self.r_h2h_W) + self.r_h_b)
-            z = self.gate_act_func(dot(x_in, self.z_x2h_W) + dot(h, self.z_h2h_W) + self.z_h_b)
-            c = self.act_func(dot(x_in, self.c_x2h_W) + dot(r * h, self.c_h2h_W) + self.c_h_b)
-            h = z * h + (tensor.ones_like(z) - z) * c
-        return h
-
-    def unfixed_step(self, x_in, pre_h):
-        r = self.gate_act_func(dot(x_in, self.r_x2h_W) + dot(pre_h, self.r_h2h_W) + self.r_h_b)
-        z = self.gate_act_func(dot(x_in, self.z_x2h_W) + dot(pre_h, self.z_h2h_W) + self.z_h_b)
-        c = self.act_func(dot(x_in, self.c_x2h_W) + dot(r * pre_h, self.c_h2h_W) + self.c_h_b)
-        h = z * pre_h + (tensor.ones_like(z) - z) * c
-        return h
-
-    def __call__(self, input):
-        # input
-        if input.ndim == 3:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), input.shape[0], self.n_out)
-            input = input.dimshuffle((1, 0, 2))
-
-        elif input.ndim == 2:
-            self.h0 = tensor.alloc(np.cast[tensor.config.floatX](0.), self.n_out)
-            input = input
-
-        else:
-            raise ValueError("Unknown input dimension: %d" % input.ndim)
-
-        if self.backward:
-            input = input[::-1]
-
-        # outputs
-        if self.fixed:
-            assert self.bptt > 0
-            taps = list(range(-self.bptt + 1, 1))
-            sequences = [dict(input=input, taps=taps)]
-            hs, _ = scan(fn=self.fixed_step, sequences=sequences)
-        else:
-            hs, _ = scan(fn=self.unfixed_step, sequences=input, outputs_info=self.h0,
-                         truncate_gradient=self.bptt)
-
-        # return
-        if self.backward:
-            hs = hs[::-1]
-
-        if input.ndim == 3:
-            if self.return_sequence:
-                return hs.dimshuffle(1, 0, 2)
-            else:
-                return hs[-1]
-
-        if input.ndim == 2:
-            if self.return_sequence:
-                return hs
-            else:
-                return hs[-1]
-
-    def __str__(self):
-        return 'GRU'
-
-    def to_json(self):
-        config = {
-            'n_in': self.n_in,
-            'n_out': self.n_out,
-            'init': self.init,
-            'inner_init': self.inner_init,
-            'activation': self.act_name,
-            'gate_activation': self.gate_act_name,
-            'bptt': self.bptt,
-            'fixed': self.fixed,
-            'return_sequence': self.return_sequence,
-            'backward': self.backward
-        }
-        return config
-
-
-class Bidirectional(Layer):
-    def __init__(self, rnn, merge_mode='concat', **rnn_params):
-        super(Bidirectional, self).__init__()
-
-        # parameters
-        self.merge_mode = merge_mode
-        self.rnn_params = rnn_params
-        self.n_in = rnn_params['n_in']
-
-        if self.merge_mode == 'concat':
-            self.n_out = rnn_params['n_out'] * 2
-        else:
-            raise ValueError("Unknown merge mode: %s" % self.merge_mode)
-
-        # get rnn
-        if type(rnn).__name__ == 'str':
-            rnn = get_rnn(rnn)
-        self.forward_rnn = rnn(backward=False, **rnn_params)
-        self.backward_rnn = rnn(backward=True, **rnn_params)
-
-        # params
-        self.train_params.extend(self.backward_rnn.train_params + self.forward_rnn.train_params)
-        self.reg_params.extend(self.backward_rnn.reg_params + self.forward_rnn.reg_params)
-
-    def __call__(self, input):
-        forward_res = self.forward_rnn(input)
-        backward_res = self.backward_rnn(input)
-
-        if self.merge_mode == 'concat':
-            res = tensor.concatenate([forward_res, backward_res], axis=-1)
-
-        return res
-
-    def __str__(self):
-        return "Bidirectional-%s" % str(self.forward_rnn)
-
-    def to_json(self):
-        rnn_params = self.forward_rnn.to_json()
-        rnn_params.pop('backward')
-
-        config = {
-            'rnn_params': rnn_params,
-            'merge_mode': self.merge_mode,
-            'rnn': str(self.forward_rnn),
-        }
-
-        return config
-
-
-def get_rnn(rnn_type):
-    rnn_type = rnn_type.lower()
-
-    if rnn_type in ['rnn', 'simple_rnn', 'RNN']:
-        return SimpleRNN
-
-    elif rnn_type in ['lstm', 'LSTM']:
-        return LSTM
-
-    elif rnn_type in ['plstm', 'peephole_lstm', 'PLSTM']:
-        return PLSTM
-
-    elif rnn_type in ['clstm', 'coupled_lstm', 'CLSTM']:
-        return CLSTM
-
-    elif rnn_type in ['gru', 'GRU']:
-        return GRU
-
-    else:
-        raise ValueError("Unknown rnn type: %s" % rnn_type)

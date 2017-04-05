@@ -2,10 +2,10 @@
 
 from theano import tensor
 
-from thdl.model.utils.variables import get_gru_variables
-from thdl.model.utils.variables import get_lstm_variables
-from thdl.model.utils.variables import get_mgu_variables
-from thdl.model.utils.variables import get_rnn_variables
+from thdl.model.utils.variables import gru_variables
+from thdl.model.utils.variables import lstm_variables
+from thdl.model.utils.variables import mgu_variables
+from thdl.model.utils.variables import rnn_variables
 from .base import SubNet
 from ..activation import get_activation
 
@@ -28,7 +28,7 @@ class RNN(SubNet):
         self.bias = bias
 
         # variables
-        self.x2o, self.o2o, self.b = get_rnn_variables(rng, n_in, n_out, init, inner_init)
+        self.x2o, self.o2o, self.b = rnn_variables(rng, n_in, n_out, init, inner_init)
         self.outputs_info_len = 1
 
         # params
@@ -81,7 +81,7 @@ class GRU(SubNet):
         # variables
         self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
         self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
-        self.f_x2h_W, self.f_h2h_W, self.f_h_b = get_gru_variables(rng, n_in, n_out, init, inner_init)
+        self.f_x2h_W, self.f_h2h_W, self.f_h_b = gru_variables(rng, n_in, n_out, init, inner_init)
 
         # params
         self.train_params.extend([self.r_x2h_W, self.r_h2h_W,
@@ -151,7 +151,7 @@ class LSTM(SubNet):
         self.f_x2h_W, self.f_h2h_W, self.f_h_b, \
         self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
         self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
-        self.o_x2h_W, self.o_h2h_W, self.o_h_b = get_lstm_variables(rng, n_in, n_out, init, inner_init)
+        self.o_x2h_W, self.o_h2h_W, self.o_h_b = lstm_variables(rng, n_in, n_out, init, inner_init)
 
         # params
         self.train_params.extend([self.f_x2h_W, self.f_h2h_W,
@@ -223,7 +223,7 @@ class MGU(SubNet):
 
         # variables
         self.f_x2h_W, self.f_h2h_W, self.f_h_b, \
-        self.i_x2h_W, self.i_h2h_W, self.i_h_b = get_mgu_variables(rng, n_in, n_out, init, inner_init)
+        self.i_x2h_W, self.i_h2h_W, self.i_h_b = mgu_variables(rng, n_in, n_out, init, inner_init)
 
         # params
         self.train_params.extend([self.f_x2h_W, self.f_h2h_W,
