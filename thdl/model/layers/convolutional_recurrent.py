@@ -5,10 +5,8 @@ from theano import tensor
 
 from .base import Layer
 from .convolution import Convolution
-from .convolution import Pool2D
-from ..activation import get_activation
-
-dot = tensor.dot
+from .pooling import Pooling
+from ..activation import Tanh
 
 
 class NLPConvPooling(Layer):
@@ -49,10 +47,8 @@ class NLPConvPooling(Layer):
             self.reg_params.extend(self.all_pooling[i].reg_params)
             self.updates.update(self.all_pooling[i].updates)
 
-    def __str__(self):
-        return 'NLPConvPooling'
 
-    def __call__(self, input):
+    def forward(self, input, **kwargs):
         outputs = []
         for i in range(len(self.filter_heights)):
             conv_out = self.all_conv[i](input)
@@ -173,9 +169,6 @@ class NLPAsymConv(Layer):
             pass
         else:
             raise ValueError("Unknown concatenate method: %s" % concat)
-
-    def __str__(self):
-        return "NLPAsymConv"
 
     def __call__(self, input):
         outputs = []

@@ -24,7 +24,7 @@ from .recurrent import CLSTM
 from .bidirectional import Bidirectional
 
 # other
-from .other import Flatten
-from .other import Reshape
-from .other import Mean
-from .other import Dimshuffle
+from .shape import Flatten
+from .shape import Reshape
+from .shape import Mean
+from .shape import Dimshuffle
