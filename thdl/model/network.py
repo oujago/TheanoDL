@@ -152,17 +152,19 @@ class Model(AbstractModel):
             layer_json[layer.__class__.__name__] = layer.to_json()
 
         # loss component
-        loss_json = self.loss_comp.to_json()
+        loss_json = self.loss_comp.__class__.__name__
 
         # optimizer component
-        optimizer_json = self.optimizer_comp.to_json()
+        optimizer_json = {
+            self.optimizer_comp.__class__.__name__: self.optimizer_comp.to_json()
+        }
 
         # configuration
         config = {
             'seed': self.seed,
-            'layer_json': layer_json,
-            'loss_json': loss_json,
-            'optimizer_json': optimizer_json,
+            'layers': layer_json,
+            'loss': loss_json,
+            'optimizer': optimizer_json,
         }
 
         return config

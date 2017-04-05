@@ -42,6 +42,18 @@ class Optimizer(object):
 
         return grads
 
+    def to_json(self):
+        config = {
+            "learning_rate": self.learning_rate,
+            "clip_norm": self.clip_norm,
+            'max_norm': self.max_norm,
+        }
+        return config
+    
+    @classmethod
+    def from_json(cls, config):
+        return cls(**config)
+
 
 class SGD(Optimizer):
     """
@@ -98,8 +110,16 @@ class Momentum(Optimizer):
 
         return updates
 
+    def to_json(self):
+        base_config = super(Momentum, self).to_json()
+        config = {
+            "momentum": self.momentum,
+        }
+        config.update(base_config)
+        return config
 
-class NesterovMomentum(Optimizer):
+
+class NesterovMomentum(Momentum):
     """
     Stochastic Gradient Descent (SGD) updates with Nesterov momentum
 
@@ -120,8 +140,7 @@ class NesterovMomentum(Optimizer):
     which allows the gradient to be evaluated at the current parameters.
     """
 
-    def __init__(self, momentum=0.9, **kwargs):
-        self.momentum = momentum
+    def __init__(self, **kwargs):
         super(NesterovMomentum, self).__init__(**kwargs)
 
     def get_updates(self, params, cost):
@@ -188,6 +207,14 @@ class Adagrad(Optimizer):
 
         return updates
 
+    def to_json(self):
+        base_config = super(Adagrad, self).to_json()
+        config = {
+            "epsilon": self.epsilon,
+        }
+        config.update(base_config)
+        return config
+
 
 class RMSprop(Optimizer):
     """
@@ -236,6 +263,15 @@ class RMSprop(Optimizer):
             updates[param] = param - (self.learning_rate * grad / tensor.sqrt(accu_new + self.epsilon))
 
         return updates
+
+    def to_json(self):
+        base_config = super(RMSprop, self).to_json()
+        config = {
+            "rho": self.rho,
+            "epsilon": self.epsilon,
+        }
+        config.update(base_config)
+        return config
 
 
 class Adadelta(Optimizer):
@@ -307,6 +343,15 @@ class Adadelta(Optimizer):
 
         return updates
 
+    def to_json(self):
+        base_config = super(Adadelta, self).to_json()
+        config = {
+            "rho": self.rho,
+            "epsilon": self.epsilon,
+        }
+        config.update(base_config)
+        return config
+
 
 class Adam(Optimizer):
     """
@@ -359,6 +404,16 @@ class Adam(Optimizer):
 
         return updates
 
+    def to_json(self):
+        base_config = super(Adam, self).to_json()
+        config = {
+            "beta1": self.beta1,
+            "beta2": self.beta2,
+            "epsilon": self.epsilon,
+        }
+        config.update(base_config)
+        return config
+
 
 class Adamax(Optimizer):
     """
@@ -408,3 +463,13 @@ class Adamax(Optimizer):
         updates[t_prev] = t
 
         return updates
+
+    def to_json(self):
+        base_config = super(Adamax, self).to_json()
+        config = {
+            "beta1": self.beta1,
+            "beta2": self.beta2,
+            "epsilon": self.epsilon,
+        }
+        config.update(base_config)
+        return config
