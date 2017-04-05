@@ -4,8 +4,8 @@ from theano import tensor
 
 
 from .base import Layer
-from ..activation import Softmax as SoftmaxAct
-from ..activation import Tanh
+from ..nonlinearity import Softmax as SoftmaxAct
+from ..nonlinearity import Tanh
 from ..initialization import GlorotUniform
 from ..initialization import _zero
 

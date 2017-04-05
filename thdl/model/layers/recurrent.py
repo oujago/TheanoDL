@@ -6,8 +6,8 @@ from theano import scan
 from theano import tensor
 
 from .base import Layer
-from ..activation import HardSigmoid
-from ..activation import Tanh
+from ..nonlinearity import HardSigmoid
+from ..nonlinearity import Tanh
 from ..initialization import GlorotUniform
 from ..initialization import Orthogonal
 from ..utils import variables

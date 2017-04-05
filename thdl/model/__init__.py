@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from . import NOR
-from . import activation
+from . import nonlinearity
 from . import initialization
 from . import layers
 from . import objective

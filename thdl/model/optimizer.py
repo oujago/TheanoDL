@@ -49,7 +49,7 @@ class Optimizer(object):
             'max_norm': self.max_norm,
         }
         return config
-    
+
     @classmethod
     def from_json(cls, config):
         return cls(**config)

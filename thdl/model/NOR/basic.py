@@ -4,7 +4,7 @@ from theano import tensor
 
 from thdl.model.utils.variables import get_shared
 from .base import SubNet
-from ..activation import get_activation
+from ..nonlinearity import get_activation
 
 dot = tensor.dot
 

@@ -7,7 +7,7 @@ from thdl.model.utils.variables import lstm_variables
 from thdl.model.utils.variables import mgu_variables
 from thdl.model.utils.variables import rnn_variables
 from .base import SubNet
-from ..activation import get_activation
+from ..nonlinearity import get_activation
 
 dot = tensor.dot
 
