@@ -26,6 +26,9 @@ class Optimizer(object):
         self.clip_norm = clip_norm
         self.max_norm = max_norm
 
+    def __call__(self, params, cost):
+        return self.get_updates(params, cost)
+
     def get_updates(self, params, cost):
         grads = tensor.grad(cost=cost, wrt=params)
 

@@ -7,6 +7,9 @@ from .base import Layer
 from .basic import Dense
 from .basic import Softmax
 
+# regularization
+from .regularization import Dropout
+
 # convolution
 from .convolution import Convolution
 

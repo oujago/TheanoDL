@@ -3,8 +3,8 @@
 
 from theano import shared
 
-from .base import Layer
-from ..initialization import get_shared
+from thdl.model.layers.base import Layer
+from thdl.model.initialization import get_shared
 
 
 class Embedding(Layer):

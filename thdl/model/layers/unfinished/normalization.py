@@ -4,8 +4,8 @@ import numpy as np
 from theano import tensor
 
 from thdl.model.utils.variables import dtype
-from .base import Layer
-from ..initialization import get_shared
+from thdl.model.layers.base import Layer
+from thdl.model.initialization import get_shared
 
 
 class BatchNormal(Layer):
