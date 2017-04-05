@@ -23,3 +23,8 @@ from .recurrent import CLSTM
 # bidirectional
 from .bidirectional import Bidirectional
 
+# other
+from .other import Flatten
+from .other import Reshape
+from .other import Mean
+from .other import Dimshuffle

@@ -19,10 +19,10 @@ class Bidirectional(Layer):
         self.forward_rnn.connect_to(pre_layer)
         self.backward_rnn.connect_to(pre_layer)
 
-        output_shape = self.forward_rnn.output_shape
+        input_shape = self.forward_rnn.output_shape
 
         if self.merge_mode == 'concat':
-            self.output_shape = output_shape[-1:] + (output_shape[-1] * 2)
+            self.output_shape = input_shape[-1:] + (input_shape[-1] * 2)
         else:
             raise ValueError("Unknown merge mode: %s" % self.merge_mode)
 

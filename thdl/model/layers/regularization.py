@@ -2,9 +2,9 @@
 
 
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-from ..utils.random import get_rng
 
 from .base import Layer
+from ..utils.random import get_rng
 
 
 class Dropout(Layer):
@@ -49,6 +49,6 @@ class Dropout(Layer):
     def to_json(self):
         config = {
             'p': self.p,
-            'seed':self.seed
+            'seed': self.seed
         }
         return config
