@@ -4,6 +4,21 @@
 import numpy as np
 
 
+class AbstractExecution(object):
+    def train_execution(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def predict_execution(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def to_json(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    @classmethod
+    def from_json(cls, *args, **kwargs):
+        raise NotImplementedError()
+
+
 class Execution:
     def __init__(self, batch_size, epochs=50, shuffle=True, shuffle_seed=12345, **kwargs):
         self.batch_size = batch_size
@@ -12,7 +27,7 @@ class Execution:
         self.shuffle_seed = shuffle_seed
         self.kwargs = kwargs
 
-    def exe_train(self, model, all_xs, all_ys, **kwargs):
+    def exe_train(self, model, all_xs, all_ys):
         total_len = len(all_xs)
 
         nb_samples = total_len // self.batch_size
