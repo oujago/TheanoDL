@@ -2,5 +2,5 @@
 
 
 from . import w2v
-from .main import Data
-from .sentence_data import SentenceCorpus
+from . import text_classification
+from .base import Data

@@ -9,12 +9,12 @@ from nltk import word_tokenize
 from thdl.utils.data_nlp_processing import get_split
 from thdl.utils.data_nlp_processing import item_list2index_list
 from thdl.utils.data_nlp_processing import yield_item
-from .w2v import W2VGet
-from ..utils import pickle_dump
-from ..utils import pickle_load
+from thdl.utils.file import pickle_dump
+from thdl.utils.file import pickle_load
+from ..w2v import W2VGet
 
 
-class SentenceCorpus:
+class SentenceGetter:
     def __init__(self, corpus_name, folder_num=None, test_idx=None, valid_idx=None, **kwargs):
         """
         If folder_num and test_idx are provided,
