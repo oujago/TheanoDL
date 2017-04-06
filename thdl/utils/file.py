@@ -61,3 +61,23 @@ def pickle_load(path):
     return data
 
 
+def check_duplicate_path(filepath):
+    """
+    If there is a same filepath, for example 'file/test.txt',
+    Then this path will be 'file/test(1).txt'
+
+    If 'file/test(1).txt' also exists, then this path will be 'file/test(2).txt'
+
+    :param filepath:
+    :return:
+    """
+    if not os.path.exists(os.path.join(os.getcwd(), filepath)):
+        return filepath
+
+    i = 1
+    splits = filepath.split(".")
+    head, tail = '.'.join(splits[:-1]), splits[-1]
+    while os.path.exists(os.path.join(os.getcwd(), "%s(%d).%s" % (head, i, tail))):
+        i += 1
+
+    return "%s(%d).%s" % (head, i, tail)
