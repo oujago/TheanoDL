@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from thdl.utils.variables import get_shared
+from thdl.utils.model_variables import get_shared
 from .base import SubNet
 
 

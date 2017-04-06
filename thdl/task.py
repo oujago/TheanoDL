@@ -7,8 +7,8 @@ from collections import Counter
 
 import numpy as np
 
-from thdl.data.processing import yield_item
-from thdl.utils.other import time_format
+from thdl.utils.usual import time_format
+from thdl.utils.data_nlp_processing import yield_item
 from .data import Data
 from .evaluation import Evaluation
 from .execution import Execution
@@ -119,7 +119,7 @@ class Task:
         ##############################
         t1 = time.time()
         print("building model ...", file=file)
-        model_cls.compile()
+        model_cls.build()
         print("building done, used %s.\n" % time_format(time.time() - t1), file=file)
 
         ##############################

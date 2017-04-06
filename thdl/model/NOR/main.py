@@ -5,7 +5,7 @@ from theano import scan
 from theano import tensor
 from theano.tensor.signal.pool import pool_2d
 
-from thdl.utils.variables import dtype
+from thdl.utils.model_variables import dtype
 from ..layers import Layer
 
 

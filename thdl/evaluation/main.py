@@ -7,7 +7,7 @@ import sys
 import matplotlib
 import numpy as np
 
-from thdl.utils.other import check_duplicate_path
+from thdl.utils.usual import check_duplicate_path
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

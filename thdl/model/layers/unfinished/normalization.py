@@ -5,7 +5,7 @@ from theano import tensor
 
 from thdl.model.initialization import get_shared
 from thdl.model.layers.base import Layer
-from thdl.utils.variables import dtype
+from thdl.utils.model_variables import dtype
 
 
 class BatchNormal(Layer):

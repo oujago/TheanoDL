@@ -5,7 +5,7 @@ import numpy as np
 from theano import scan
 from theano import tensor
 
-from thdl.utils import variables
+from thdl.utils import model_variables
 from thdl.utils.random import get_dtype
 from .base import Layer
 from ..initialization import GlorotUniform
@@ -160,7 +160,7 @@ class SimpleRNN(Recurrent):
 
         # variables
         self.h0 = None
-        self.W, self.U, self.b = variables.rnn_variables(n_in, self.n_out, self.init, self.inner_init)
+        self.W, self.U, self.b = model_variables.rnn_variables(n_in, self.n_out, self.init, self.inner_init)
 
     def forward(self, input, **kwargs):
         return self.get_forward(input, [self.h0], self.unfixed_step, self.fixed_step)
@@ -203,7 +203,7 @@ class LSTM(GatedRecurrent):
         self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
         self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
         self.o_x2h_W, self.o_h2h_W, self.o_h_b = \
-            variables.lstm_variables(n_in, self.n_out, self.init, self.inner_init)
+            model_variables.lstm_variables(n_in, self.n_out, self.init, self.inner_init)
 
     def forward(self, input, **kwargs):
         return self.get_forward(input, [self.h0, self.c0], self.unfixed_step, self.fixed_step, 1)
@@ -262,7 +262,7 @@ class GRU(GatedRecurrent):
         self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
         self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
         self.c_x2h_W, self.c_h2h_W, self.c_h_b = \
-            variables.gru_variables(n_in, self.n_out, self.init, self.inner_init)
+            model_variables.gru_variables(n_in, self.n_out, self.init, self.inner_init)
 
     def fixed_step(self, *args):
         h = self.h0
@@ -332,7 +332,7 @@ class PLSTM(GatedRecurrent):
         self.i_x2h_W, self.i_h2h_W, self.p_i, self.i_h_b, \
         self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
         self.o_x2h_W, self.o_h2h_W, self.p_o, self.o_h_b = \
-            variables.plstm_variables(n_in, self.n_out, self.init, self.inner_init, self.peephole_init)
+            model_variables.plstm_variables(n_in, self.n_out, self.init, self.inner_init, self.peephole_init)
 
     def forward(self, input, **kwargs):
         return self.get_forward(input, [self.h0], self.unfixed_step, self.fixed_step)
@@ -424,7 +424,7 @@ class CLSTM(GatedRecurrent):
         self.i_x2h_W, self.i_h2h_W, self.i_h_b, \
         self.g_x2h_W, self.g_h2h_W, self.g_h_b, \
         self.o_x2h_W, self.o_h2h_W, self.o_h_b = \
-            variables.clstm_variables(n_in, self.n_out, self.init, self.inner_init)
+            model_variables.clstm_variables(n_in, self.n_out, self.init, self.inner_init)
 
     def fixed_step(self, *args):
         h, c = self.h0, self.c0
