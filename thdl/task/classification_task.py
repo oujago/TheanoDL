@@ -41,7 +41,7 @@ class ClassificationTask(AbstractTask):
         # log file
         self.logfile = sys.stdout
 
-    def add_model(self, model):
+    def set_model(self, model):
         if model is None:
             return
         assert isinstance(model, AbstractModel)
@@ -50,7 +50,7 @@ class ClassificationTask(AbstractTask):
         else:
             raise ValueError("Model already exists.")
 
-    def add_data(self, data):
+    def set_data(self, data):
         if data is None:
             return
         assert isinstance(data, AbstractData)
@@ -59,7 +59,7 @@ class ClassificationTask(AbstractTask):
         else:
             raise ValueError("Data already exists.")
 
-    def add_execution(self, execution):
+    def set_execution(self, execution):
         if execution is None:
             return
         assert isinstance(execution, AbstractExecution)
@@ -68,7 +68,7 @@ class ClassificationTask(AbstractTask):
         else:
             raise ValueError("Execution already exists.")
 
-    def add_evaluation(self, evaluation):
+    def set_evaluation(self, evaluation):
         if evaluation is None:
             return
         assert isinstance(evaluation, AbstractEvaluation)
@@ -141,8 +141,8 @@ class ClassificationTask(AbstractTask):
         epoch_train_execution = self.execution.train_execution
         epoch_predict_execution = self.execution.predict_execution
 
-        self.evaluation.dock_train_metrics(self.model.train_metrics)
-        self.evaluation.dock_predict_metrics(self.model.predict_metrics)
+        self.evaluation.dock_gpu_train_metrics(self.model.train_metrics)
+        self.evaluation.dock_gpu_predict_metrics(self.model.predict_metrics)
 
         for epoch in range(self.execution.epochs):
             t1 = time.time()

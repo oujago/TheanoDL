@@ -31,3 +31,7 @@ from .shape import Flatten
 from .shape import Reshape
 from .shape import Mean
 from .shape import Dimshuffle
+
+# embedding
+from .embedding import Embedding
+

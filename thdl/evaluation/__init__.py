@@ -2,5 +2,5 @@
 
 
 from .base import AbstractEvaluation
-from .main import Evaluation
+from .classification_evaluation import ClassificationEvaluation
 

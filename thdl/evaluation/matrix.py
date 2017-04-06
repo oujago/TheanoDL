@@ -4,7 +4,7 @@ import sys
 
 import numpy as np
 
-from .other import divide
+from thdl.utils.math import divide
 
 
 def get_confusion_matrix(predictions, origins, y_num):

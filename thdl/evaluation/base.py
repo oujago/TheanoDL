@@ -4,16 +4,19 @@ from thdl.base import ThdlObj
 
 
 class AbstractEvaluation(ThdlObj):
+    def dock_gpu_metrics(self, metrics=None, train_metrics=None, predict_metrics=None):
+        raise NotImplementedError
+
+    def dock_gpu_train_metrics(self, train_metrics):
+        raise NotImplementedError
+
+    def dock_gpu_predict_metrics(self, predict_metrics):
+        raise NotImplementedError
+
+    def dock_index_to_tag(self, index_to_tags):
+        raise NotImplementedError
+
     def to_json(self):
-        raise NotImplementedError
-
-    def dock_metrics(self, metrics=None, train_metrics=None, predict_metrics=None):
-        raise NotImplementedError
-
-    def dock_train_metrics(self, train_metrics):
-        raise NotImplementedError
-
-    def dock_predict_metrics(self, predict_metrics):
         raise NotImplementedError
 
     def add_history(self, history_name, aspect, eval_outputs):

@@ -384,7 +384,7 @@ class Adam(Optimizer):
            Adam: A Method for Stochastic Optimization. arXiv preprint arXiv:1412.6980.
     """
 
-    def __init__(self, beta1, beta2, epsilon, **kwargs):
+    def __init__(self, beta1=0.9, beta2=0.999, epsilon=1e-8, **kwargs):
         super(Adam, self).__init__(**kwargs)
 
         self.beta1 = beta1
@@ -442,7 +442,7 @@ class Adamax(Optimizer):
            Adam: A Method for Stochastic Optimization. arXiv preprint arXiv:1412.6980.
     """
 
-    def __init__(self, beta1, beta2, epsilon, **kwargs):
+    def __init__(self, beta1=0.9, beta2=0.999, epsilon=1e-8, **kwargs):
         super(Adamax, self).__init__(**kwargs)
 
         self.beta1 = beta1

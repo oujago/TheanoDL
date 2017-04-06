@@ -4,12 +4,12 @@
 from theano import shared
 
 from thdl.model.layers.base import Layer
-from thdl.model.initialization import get_shared
+from thdl.model.initialization import Uniform
 
 
 class Embedding(Layer):
     def __init__(self, embed_words=None, static=None,
-                 rng=None, input_size=None, n_out=None,
+                 input_size=None, n_out=None,
                  init='uniform', **kwargs):
         """
         :param input_size:
@@ -37,7 +37,7 @@ class Embedding(Layer):
             else:
                 self.static = static
             self.input_size, self.n_out = input_size, n_out
-            self.embed_words = get_shared(rng, (input_size, n_out), init, **kwargs)
+            self.embed_words = Uniform()((input_size, n_out))
 
         if self.static is True:
             pass

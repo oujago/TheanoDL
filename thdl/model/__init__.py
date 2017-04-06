@@ -7,5 +7,6 @@ from . import metrics
 from . import objective
 from . import optimizer
 from . import regularization
+from . import tensors
 from .network import AbstractModel
 from .network import Model

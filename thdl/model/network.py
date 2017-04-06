@@ -6,40 +6,14 @@ from collections import OrderedDict
 from theano import function
 from theano import tensor
 
-from thdl.base import ThdlObj
+from thdl.model.tensors import get_tensor
 from thdl.utils.random import set_seed
+from .base import AbstractModel
 from .layers import Dropout
 from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
 
-
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
-
-
-class AbstractModel(ThdlObj):
-    def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
-        raise NotImplementedError
-
-    def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
-        raise NotImplementedError
-
-    def add_layer(self, layer):
-        raise NotImplementedError
-
-    def set_objective(self, loss_func):
-        raise NotImplementedError
-
-    def set_optimizer(self, optimizer):
-        raise NotImplementedError
-
-    def set_metrics(self, metrics):
-        raise NotImplementedError
-
-    def build(self, **kwargs):
-        raise NotImplementedError
-
-    def to_json(self):
-        raise NotImplementedError
 
 
 class Model(AbstractModel):
@@ -70,14 +44,20 @@ class Model(AbstractModel):
 
     def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
         if input_tensor:
-            self.input_tensor = input_tensor
+            if isinstance(input_tensor, tensor.TensorVariable):
+                self.input_tensor = input_tensor
+            else:
+                self.input_tensor = get_tensor(input_tensor)
         else:
             assert in_dim and in_tensor_type
             self.input_tensor = tensor.TensorType(in_tensor_type, [False] * in_dim)()
 
     def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
         if output_tensor:
-            self.output_tensor = output_tensor
+            if isinstance(output_tensor, tensor.TensorVariable):
+                self.output_tensor = output_tensor
+            else:
+                self.output_tensor = get_tensor(output_tensor)
         else:
             assert out_dim and out_tensor_type
             self.output_tensor = tensor.TensorType(out_tensor_type, [False] * out_dim)()
@@ -203,4 +183,3 @@ class Model(AbstractModel):
     def _check_train_test_split(self, layer):
         if layer.__class__ in TRAIN_TEST_SPLIT_LAYERS:
             self.train_test_split = True
-

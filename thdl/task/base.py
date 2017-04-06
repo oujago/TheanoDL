@@ -17,16 +17,16 @@ class AbstractTask(ThdlObj):
     def to_json(self):
         raise NotImplementedError
 
-    def add_model(self, model):
+    def set_model(self, model):
         raise NotImplementedError
 
-    def add_data(self, data):
+    def set_data(self, data):
         raise NotImplementedError
 
-    def add_execution(self, execution):
+    def set_execution(self, execution):
         raise NotImplementedError
 
-    def add_evaluation(self, evaluation):
+    def set_evaluation(self, evaluation):
         raise NotImplementedError
 
     def set_logfile(self, logfile):
