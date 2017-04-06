@@ -6,6 +6,7 @@ from collections import OrderedDict
 from theano import function
 from theano import tensor
 
+from thdl.base import ThObject
 from thdl.utils.random import set_seed
 from .layers import Dropout
 from .objective import CategoricalCrossEntropy
@@ -15,34 +16,30 @@ from .optimizer import SGD
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
 
 
-class AbstractModel(object):
+class AbstractModel(ThObject):
     def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def add_layer(self, layer):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_objective(self, loss_func):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_optimizer(self, optimizer):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_metrics(self, metrics):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def build(self, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def to_json(self):
         raise NotImplementedError
-
-    @classmethod
-    def from_json(cls, config):
-        raise NotImplementedError()
 
 
 class Model(AbstractModel):
@@ -203,9 +200,6 @@ class Model(AbstractModel):
 
         return config
 
-    @classmethod
-    def from_json(cls, config):
-        raise NotImplementedError()
 
     def _check_train_test_split(self, layer):
         if layer.__class__ in TRAIN_TEST_SPLIT_LAYERS:

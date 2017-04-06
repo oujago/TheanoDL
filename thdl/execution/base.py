@@ -2,21 +2,18 @@
 
 
 import numpy as np
+from thdl.base import ThObject
 
 
-class AbstractExecution(object):
+class AbstractExecution(ThObject):
     def train_execution(self, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def predict_execution(self, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def to_json(self, *args, **kwargs):
-        raise NotImplementedError()
-
-    @classmethod
-    def from_json(cls, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Execution:

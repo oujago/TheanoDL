@@ -2,13 +2,18 @@
 
 from theano import tensor
 
+from thdl.base import ThObject
 
-class Activation(object):
+
+class Activation(ThObject):
     def __call__(self, input):
         return self.call(input)
 
     def call(self, input):
-        raise NotImplementedError()
+        raise NotImplementedError
+
+    def to_json(self, *args, **kwargs):
+        return {}
 
 
 class Sigmoid(Activation):
@@ -20,7 +25,6 @@ class Sigmoid(Activation):
 
 
 class HardSigmoid(Activation):
-
     def call(self, input):
         return tensor.nnet.hard_sigmoid(input)
 

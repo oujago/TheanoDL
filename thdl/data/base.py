@@ -2,10 +2,12 @@
 
 
 import numpy as np
+
+from thdl.base import ThObject
 from thdl.utils import random
 
 
-class Data:
+class Data(ThObject):
     def __init__(self, shuffle=True, shuffle_seed=None):
         self.shuffle = shuffle
         self.shuffle_seed = shuffle_seed
@@ -38,4 +40,3 @@ class Data:
             np.random.shuffle(xs)
             np.random.seed(s)  # definitely important
             np.random.shuffle(ys)
-

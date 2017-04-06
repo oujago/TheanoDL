@@ -8,9 +8,10 @@ from theano import shared
 from theano import tensor
 
 from thdl.utils.random import get_dtype
+from thdl.base import ThObject
 
 
-class Optimizer(object):
+class Optimizer(ThObject):
     """
     Object to generate Theano update dictionaries for training.
 
@@ -40,10 +41,6 @@ class Optimizer(object):
             'max_norm': self.max_norm,
         }
         return config
-
-    @classmethod
-    def from_json(cls, config):
-        return cls(**config)
 
     def get_grads(self, params, cost):
         grads = tensor.grad(cost=cost, wrt=params)

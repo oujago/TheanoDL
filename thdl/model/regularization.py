@@ -3,8 +3,10 @@
 
 from theano import tensor
 
+from thdl.base import ThObject
 
-class Regularizer(object):
+
+class Regularizer(ThObject):
     def __init__(self, l1=0., l2=0.):
         self.l1 = l1
         self.l2 = l2
@@ -23,3 +25,10 @@ class Regularizer(object):
 
         if self.l2 > 0.:
             return tensor.sum(tensor.square(param) * self.l2)
+
+    def to_json(self):
+        config = {
+            'l1': self.l1,
+            "l2": self.l2
+        }
+        return config
