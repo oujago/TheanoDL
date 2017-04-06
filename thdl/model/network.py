@@ -12,20 +12,29 @@ from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
 
 
-TRAIN_TEST_SPLIT_LAYERS = [Dropout,]
+TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
 
 
 class AbstractModel(object):
-    def set_input(self, input_tensor=None, in_dim=None, in_tensor_type=None):
+    def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
         raise NotImplementedError()
 
-    def set_output(self, output_tensor=None, out_dim=None, out_tensor_type=None):
+    def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
         raise NotImplementedError()
 
-    def add(self, layer):
+    def add_layer(self, layer):
         raise NotImplementedError()
 
-    def compile(self, loss, optimizer, **kwargs):
+    def set_objective(self, loss_func):
+        raise NotImplementedError()
+
+    def set_optimizer(self, optimizer):
+        raise NotImplementedError()
+
+    def set_metrics(self, metrics):
+        raise NotImplementedError()
+
+    def build(self, **kwargs):
         raise NotImplementedError()
 
     def to_json(self):
@@ -45,40 +54,64 @@ class Model(AbstractModel):
         self.train_test_split = False
 
         # function
-        self.train = None
-        self.predict = None
+        self.func_train = None
+        self.func_predict = None
 
         # in and out
-        self.input = None
-        self.output = None
+        self.input_tensor = None
+        self.output_tensor = None
 
         # components
-        self.layer_comp = []
-        self.loss_comp = None
-        self.optimizer_comp = None
+        self.comp_layers = []
+        self.comp_objective = None
+        self.comp_optimizer = None
 
-    def set_input(self, input_tensor=None, in_dim=None, in_tensor_type=None):
+        # metric
+        self.metrics = None
+        self.train_metrics = None
+        self.test_metrics = None
+
+    def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
         if input_tensor:
-            self.input = input_tensor
+            self.input_tensor = input_tensor
         else:
             assert in_dim and in_tensor_type
-            self.input = tensor.TensorType(in_tensor_type, [False] * in_dim)()
+            self.input_tensor = tensor.TensorType(in_tensor_type, [False] * in_dim)()
 
-    def set_output(self, output_tensor=None, out_dim=None, out_tensor_type=None):
+    def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
         if output_tensor:
-            self.output = output_tensor
+            self.output_tensor = output_tensor
         else:
             assert out_dim and out_tensor_type
-            self.output = tensor.TensorType(out_tensor_type, [False] * out_dim)()
+            self.output_tensor = tensor.TensorType(out_tensor_type, [False] * out_dim)()
 
-    def add(self, layer):
-        self.layer_comp.append(layer)
+    def set_objective(self, loss_func):
+        self.comp_objective = loss_func
+
+    def set_optimizer(self, optimizer):
+        self.comp_optimizer = optimizer
+
+    def add_layer(self, layer):
+        self.comp_layers.append(layer)
         self._check_train_test_split(layer)
 
-    def compile(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
+    def set_metrics(self, metrics=None, train_metrics=None, test_metrics=None):
+        self.metrics = metrics
 
-        self.loss_comp = loss
-        self.optimizer_comp = optimizer
+        if train_metrics is None:
+            self.train_metrics = metrics
+        else:
+            self.train_metrics = train_metrics
+
+        if test_metrics is None:
+            self.test_metrics = metrics
+        else:
+            self.test_metrics = test_metrics
+
+    def build(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
+
+        self.comp_objective = loss
+        self.comp_optimizer = optimizer
 
         # random seed
         if self.seed:
@@ -86,7 +119,7 @@ class Model(AbstractModel):
 
         # connect to
         pre_layer = None
-        for layer in self.layer_comp:
+        for layer in self.comp_layers:
             layer.connect_to(pre_layer)
 
         # forward
@@ -98,7 +131,7 @@ class Model(AbstractModel):
 
         # regularizers
         regularizers = []
-        for layer in self.layer_comp:
+        for layer in self.comp_layers:
             regularizers.extend(layer.regularizers)
         regularizer_loss = tensor.sum(regularizers)
 
@@ -107,33 +140,34 @@ class Model(AbstractModel):
 
         # params
         params = ()
-        for layer in self.layer_comp:
+        for layer in self.comp_layers:
             params += layer.params
 
         # layer updates
         layer_updates = OrderedDict()
-        for layer in self.layer_comp:
+        for layer in self.comp_layers:
             layer_updates.update(layer.updates)
 
         # model updates
-        updates = self.optimizer_comp(params, sum(losses))
+        updates = self.comp_optimizer(params, sum(losses))
         updates.update(layer_updates)
 
         # train functions
-        inputs = [self.input, self.output]
-        if isinstance(self.optimizer_comp.learning_rate, tensor.TensorVariable):
-            inputs.append(self.optimizer_comp.learning_rate)
-        self.train = function(inputs=inputs,
-                              outputs=[train_loss, regularizer_loss, train_ys],
-                              updates=updates)
+        inputs = [self.input_tensor, self.output_tensor]
+        train_outputs = [train_ys, ] + self.train_metrics
+        self.func_train = function(inputs=inputs,
+                                   outputs=train_outputs,
+                                   updates=updates)
 
         # test functions
-        self.predict = function(inputs=[self.input, self.output],
-                                outputs=[predict_loss, predict_ys])
+        inputs = [self.input_tensor, self.output_tensor]
+        test_outputs = [predict_ys, ] + self.test_metrics
+        self.func_predict = function(inputs=inputs,
+                                     outputs=test_outputs)
 
     def _forward(self, train=True):
-        pre_layer_output = self.input
-        for layer in self.layer_comp:
+        pre_layer_output = self.input_tensor
+        for layer in self.comp_layers:
             if layer.__class__ in TRAIN_TEST_SPLIT_LAYERS:
                 pre_layer_output = layer.forward(pre_layer_output, train=train)
             else:
@@ -141,22 +175,22 @@ class Model(AbstractModel):
 
         prob_ys = pre_layer_output
         ys = tensor.argmax(prob_ys, axis=1)
-        loss = self.loss_comp(prob_ys, self.output)
+        loss = self.comp_objective(prob_ys, self.output_tensor)
         return prob_ys, ys, loss
 
     def to_json(self):
 
         # layer component
         layer_json = OrderedDict()
-        for layer in self.layer_comp:
+        for layer in self.comp_layers:
             layer_json[layer.__class__.__name__] = layer.to_json()
 
         # loss component
-        loss_json = self.loss_comp.__class__.__name__
+        loss_json = self.comp_objective.__class__.__name__
 
         # optimizer component
         optimizer_json = {
-            self.optimizer_comp.__class__.__name__: self.optimizer_comp.to_json()
+            self.comp_optimizer.__class__.__name__: self.comp_optimizer.to_json()
         }
 
         # configuration
