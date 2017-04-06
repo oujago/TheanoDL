@@ -3,11 +3,11 @@
 
 import numpy as np
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 from thdl.utils import random
 
 
-class AbstractData(ThObject):
+class AbstractData(ThdlObj):
     def get_xs(self, *args, **kwargs):
         raise NotImplementedError
 

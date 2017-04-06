@@ -2,10 +2,10 @@
 
 from theano import tensor
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 
 
-class Activation(ThObject):
+class Activation(ThdlObj):
     def __call__(self, input):
         return self.call(input)
 

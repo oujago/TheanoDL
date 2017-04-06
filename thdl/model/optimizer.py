@@ -8,10 +8,10 @@ from theano import shared
 from theano import tensor
 
 from thdl.utils.random import get_dtype
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 
 
-class Optimizer(ThObject):
+class Optimizer(ThdlObj):
     """
     Object to generate Theano update dictionaries for training.
 

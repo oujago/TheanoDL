@@ -4,7 +4,7 @@
 import numpy as np
 import theano
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 from thdl.utils.random import get_dtype
 from thdl.utils.random import get_rng
 
@@ -13,7 +13,7 @@ def shared(value, borrow=True):
     return theano.shared(value=value, borrow=borrow)
 
 
-class Initializer(ThObject):
+class Initializer(ThdlObj):
     def __call__(self, size):
         return self.call(size)
 

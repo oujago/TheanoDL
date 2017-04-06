@@ -2,10 +2,10 @@
 
 
 import numpy as np
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 
 
-class AbstractExecution(ThObject):
+class AbstractExecution(ThdlObj):
     def train_execution(self, *args, **kwargs):
         raise NotImplementedError
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 
 
-class Layer(ThObject):
+class Layer(ThdlObj):
     output_shape = None
 
     def connect_to(self, pre_layer=None):

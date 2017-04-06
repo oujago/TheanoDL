@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-class ThObject(object):
+class ThdlObj(object):
     def to_json(self, *args, **kwargs):
         raise NotImplementedError
 

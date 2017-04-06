@@ -6,7 +6,7 @@ from collections import OrderedDict
 from theano import function
 from theano import tensor
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 from thdl.utils.random import set_seed
 from .layers import Dropout
 from .objective import CategoricalCrossEntropy
@@ -16,7 +16,7 @@ from .optimizer import SGD
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
 
 
-class AbstractModel(ThObject):
+class AbstractModel(ThdlObj):
     def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
         raise NotImplementedError
 

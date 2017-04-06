@@ -3,10 +3,10 @@
 
 from theano import tensor
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 
 
-class Regularizer(ThObject):
+class Regularizer(ThdlObj):
     def __init__(self, l1=0., l2=0.):
         self.l1 = l1
         self.l2 = l2

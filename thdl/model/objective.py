@@ -2,10 +2,10 @@
 
 from theano import tensor
 
-from thdl.base import ThObject
+from thdl.base import ThdlObj
 
 
-class Objective(ThObject):
+class Objective(ThdlObj):
     def __call__(self, outputs, targets):
         return self.call(outputs, targets)
 
