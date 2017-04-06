@@ -6,8 +6,8 @@ from collections import OrderedDict
 from theano import function
 from theano import tensor
 
+from thdl.utils.random import set_seed
 from .layers import Dropout
-from .utils import random
 from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
 
@@ -82,7 +82,7 @@ class Model(AbstractModel):
 
         # random seed
         if self.seed:
-            random.set_seed(self.seed)
+            set_seed(self.seed)
 
         # connect to
         pre_layer = None

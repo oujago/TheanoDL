@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from . import NOR
 from . import nonlinearity
 from . import initialization
 from . import layers

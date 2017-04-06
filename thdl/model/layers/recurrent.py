@@ -5,13 +5,13 @@ import numpy as np
 from theano import scan
 from theano import tensor
 
+from thdl.utils import variables
+from thdl.utils.random import get_dtype
 from .base import Layer
-from ..nonlinearity import HardSigmoid
-from ..nonlinearity import Tanh
 from ..initialization import GlorotUniform
 from ..initialization import Orthogonal
-from ..utils import variables
-from ..utils.random import get_dtype
+from ..nonlinearity import HardSigmoid
+from ..nonlinearity import Tanh
 
 
 class Recurrent(Layer):

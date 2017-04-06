@@ -7,7 +7,7 @@ import numpy as np
 from theano import shared
 from theano import tensor
 
-from .utils.random import get_dtype
+from thdl.utils.random import get_dtype
 
 
 class Optimizer(object):
@@ -21,7 +21,7 @@ class Optimizer(object):
     a list of parameters as input and return an ordered dictionary of updates:
     """
 
-    def __init__(self, learning_rate, clip_norm=0., max_norm=0.):
+    def __init__(self, learning_rate=0.001, clip_norm=0., max_norm=0.):
         self.learning_rate = learning_rate
         self.clip_norm = clip_norm
         self.max_norm = max_norm
