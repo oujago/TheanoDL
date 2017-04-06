@@ -6,6 +6,9 @@ from thdl.base import ThdlObj
 
 
 class AbstractExecution(ThdlObj):
+    batch_size = None
+    epochs = None
+
     def train_execution(self, *args, **kwargs):
         raise NotImplementedError
 

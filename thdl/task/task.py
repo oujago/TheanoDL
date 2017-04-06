@@ -9,9 +9,9 @@ import numpy as np
 
 from thdl.utils.usual import time_format
 from thdl.utils.data_nlp_processing import yield_item
-from .data import Data
-from .evaluation import Evaluation
-from .execution import Execution
+from thdl.data import Data
+from thdl.evaluation import Evaluation
+from thdl.execution import Execution
 
 
 class Task:
