@@ -7,7 +7,7 @@ import numpy as np
 from theano import shared
 from theano import tensor
 
-from .utils.random import get_dtype
+from thdl.utils.random import get_dtype
 
 
 class Optimizer(object):
@@ -21,8 +21,9 @@ class Optimizer(object):
     a list of parameters as input and return an ordered dictionary of updates:
     """
 
-    def __init__(self, learning_rate, clip_norm=0., max_norm=0.):
-        self.learning_rate = learning_rate
+    def __init__(self, learning_rate=0.001, decay=0., clip_norm=0., max_norm=0.):
+        self.learning_rate = shared(np.cast[get_dtype()](learning_rate))
+        self.decay = decay
         self.clip_norm = clip_norm
         self.max_norm = max_norm
 
@@ -30,6 +31,21 @@ class Optimizer(object):
         return self.get_updates(params, cost)
 
     def get_updates(self, params, cost):
+        raise NotImplementedError()
+
+    def to_json(self):
+        config = {
+            "learning_rate": self.learning_rate,
+            "clip_norm": self.clip_norm,
+            'max_norm': self.max_norm,
+        }
+        return config
+
+    @classmethod
+    def from_json(cls, config):
+        return cls(**config)
+
+    def get_grads(self, params, cost):
         grads = tensor.grad(cost=cost, wrt=params)
 
         if self.max_norm > 0.:
@@ -42,17 +58,11 @@ class Optimizer(object):
 
         return grads
 
-    def to_json(self):
-        config = {
-            "learning_rate": self.learning_rate,
-            "clip_norm": self.clip_norm,
-            'max_norm': self.max_norm,
-        }
-        return config
-    
-    @classmethod
-    def from_json(cls, config):
-        return cls(**config)
+    def get_lr_updates(self):
+        lr_update = OrderedDict()
+        if 0. < self.decay < 1.:
+            lr_update[self.learning_rate] *= self.decay
+        return lr_update
 
 
 class SGD(Optimizer):
@@ -68,9 +78,10 @@ class SGD(Optimizer):
 
     def get_updates(self, params, cost):
         updates = OrderedDict()
-        grads = super(SGD, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
         for param, grad in zip(params, grads):
             updates[param] = param - self.learning_rate * grad
+        updates.update(self.get_lr_updates())
         return updates
 
 
@@ -94,7 +105,7 @@ class Momentum(Optimizer):
         super(Momentum, self).__init__(**kwargs)
 
     def get_updates(self, params, cost):
-        grads = super(Momentum, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         updates = OrderedDict()
 
@@ -108,6 +119,7 @@ class Momentum(Optimizer):
             updates[velocity] = x - param
             updates[param] = x
 
+        updates.update(self.get_lr_updates())
         return updates
 
     def to_json(self):
@@ -144,7 +156,7 @@ class NesterovMomentum(Momentum):
         super(NesterovMomentum, self).__init__(**kwargs)
 
     def get_updates(self, params, cost):
-        grads = super(NesterovMomentum, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         updates = OrderedDict()
 
@@ -158,6 +170,7 @@ class NesterovMomentum(Momentum):
             updates[velocity] = x
             updates[param] = self.momentum * x + updates[param]
 
+        updates.update(self.get_lr_updates())
         return updates
 
 
@@ -194,7 +207,7 @@ class Adagrad(Optimizer):
         self.epsilon = epsilon
 
     def get_updates(self, params, cost):
-        grads = super(Adagrad, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         updates = OrderedDict()
 
@@ -205,6 +218,7 @@ class Adagrad(Optimizer):
             updates[accu] = accu_new
             updates[param] = param - (self.learning_rate * grad / tensor.sqrt(accu_new + self.epsilon))
 
+        updates.update(self.get_lr_updates())
         return updates
 
     def to_json(self):
@@ -250,7 +264,7 @@ class RMSprop(Optimizer):
         self.epsilon = epsilon
 
     def get_updates(self, params, cost):
-        grads = super(RMSprop, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         updates = OrderedDict()
         one = tensor.constant(1)
@@ -262,6 +276,7 @@ class RMSprop(Optimizer):
             updates[accu] = accu_new
             updates[param] = param - (self.learning_rate * grad / tensor.sqrt(accu_new + self.epsilon))
 
+        updates.update(self.get_lr_updates())
         return updates
 
     def to_json(self):
@@ -317,7 +332,7 @@ class Adadelta(Optimizer):
         self.epsilon = epsilon
 
     def get_updates(self, params, cost):
-        grads = super(Adadelta, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         updates = OrderedDict()
         one = tensor.constant(1)
@@ -341,6 +356,7 @@ class Adadelta(Optimizer):
             delta_accu_new = self.rho * delta_accu + (one - self.rho) * update ** 2
             updates[delta_accu] = delta_accu_new
 
+        updates.update(self.get_lr_updates())
         return updates
 
     def to_json(self):
@@ -379,7 +395,7 @@ class Adam(Optimizer):
         self.epsilon = epsilon
 
     def get_updates(self, params, cost):
-        grads = super(Adam, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         updates = OrderedDict()
         t_prev = shared(np.asarray(0., dtype=get_dtype()))
@@ -402,6 +418,7 @@ class Adam(Optimizer):
 
         updates[t_prev] = t
 
+        updates.update(self.get_lr_updates())
         return updates
 
     def to_json(self):
@@ -436,7 +453,7 @@ class Adamax(Optimizer):
         self.epsilon = epsilon
 
     def get_updates(self, params, cost):
-        grads = super(Adamax, self).get_updates(params, cost)
+        grads = self.get_grads(params, cost)
 
         t_prev = shared(np.asarray(0., dtype=get_dtype()))
         updates = OrderedDict()
@@ -462,6 +479,7 @@ class Adamax(Optimizer):
 
         updates[t_prev] = t
 
+        updates.update(self.get_lr_updates())
         return updates
 
     def to_json(self):

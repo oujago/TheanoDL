@@ -6,7 +6,7 @@ from theano import tensor
 from thdl.model.layers.base import Layer
 from thdl.model.layers.convolution import Convolution
 from thdl.model.layers.pooling import Pooling
-from thdl.model.activation import Tanh
+from thdl.model.nonlinearity import Tanh
 
 
 class NLPConvPooling(Layer):

@@ -3,8 +3,8 @@
 
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
+from thdl.utils.random import get_rng
 from .base import Layer
-from ..utils.random import get_rng
 
 
 class Dropout(Layer):

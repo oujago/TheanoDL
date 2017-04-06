@@ -21,6 +21,19 @@ Every artificial intelligence(AI) task involves four components: **Model**, **Da
 
 ![four classes](doc/pics/p2.PNG)
 
+The process of AI task is as follows:
+
+![process](doc/pics/p3.PNG)
+
+So, by extracting the unchanged process, we got our deep learning framework.
+
+Thdl framework contains four modules:
+ 
+- **data**
+- **model**
+- **execution**
+- **evaluation**
+
 ## Features
 
 - Support commonly used models, including convnets, RNNs and LSTMS.

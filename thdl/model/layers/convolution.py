@@ -3,7 +3,7 @@
 from theano.tensor.nnet import conv
 
 from .base import Layer
-from ..activation import ReLU
+from ..nonlinearity import ReLU
 from ..initialization import GlorotUniform
 from ..initialization import _zero
 

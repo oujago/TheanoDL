@@ -3,7 +3,7 @@
 from theano import tensor
 
 from thdl.model.layers.base import Layer
-from thdl.model.activation import get_activation
+from thdl.model.nonlinearity import get_activation
 from thdl.model.initialization import get_shared
 
 dot = tensor.dot
