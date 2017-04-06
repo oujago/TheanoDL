@@ -6,9 +6,9 @@ from collections import Counter
 import numpy as np
 from nltk import word_tokenize
 
-from .processing import get_split
-from .processing import item_list2index_list
-from .processing import yield_item
+from thdl.utils.data_nlp_processing import get_split
+from thdl.utils.data_nlp_processing import item_list2index_list
+from thdl.utils.data_nlp_processing import yield_item
 from .w2v import W2VGet
 from ..utils import pickle_dump
 from ..utils import pickle_load
