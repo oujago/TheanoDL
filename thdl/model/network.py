@@ -66,7 +66,7 @@ class Model(AbstractModel):
         # metric
         self.metrics = None
         self.train_metrics = None
-        self.test_metrics = None
+        self.predict_metrics = None
 
     def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
         if input_tensor:
@@ -101,9 +101,9 @@ class Model(AbstractModel):
             self.train_metrics = train_metrics
 
         if test_metrics is None:
-            self.test_metrics = metrics
+            self.predict_metrics = metrics
         else:
-            self.test_metrics = test_metrics
+            self.predict_metrics = test_metrics
 
     def build(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
 
@@ -158,7 +158,7 @@ class Model(AbstractModel):
 
         # test functions
         inputs = [self.input_tensor, self.output_tensor]
-        test_outputs = [predict_ys, ] + self.test_metrics
+        test_outputs = [predict_ys, ] + self.predict_metrics
         self.func_predict = function(inputs=inputs,
                                      outputs=test_outputs)
 

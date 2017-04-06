@@ -16,21 +16,30 @@ from thdl.utils.usual import time_format
 
 
 class ClassificationTask(AbstractTask):
-    def __init__(self, model=None, data=None, evaluation=None, execution=None,
-                 logfile=sys.stdout):
+    # def __init__(self, model=None, data=None, evaluation=None, execution=None,
+    #              logfile=sys.stdout):
+    #     # components
+    #     self.model = None
+    #     self.data = None
+    #     self.evaluation = None
+    #     self.execution = None
+    #
+    #     self.add_model(model)
+    #     self.add_data(data)
+    #     self.add_execution(execution)
+    #     self.add_evaluation(evaluation)
+    #
+    #     # log file
+    #     self.logfile = logfile
+    def __init__(self):
         # components
         self.model = None
         self.data = None
         self.evaluation = None
         self.execution = None
 
-        self.add_model(model)
-        self.add_data(data)
-        self.add_execution(execution)
-        self.add_evaluation(evaluation)
-
         # log file
-        self.logfile = logfile
+        self.logfile = sys.stdout
 
     def add_model(self, model):
         if model is None:
@@ -90,8 +99,9 @@ class ClassificationTask(AbstractTask):
             print("", file=self.logfile)
         self.logfile.flush()
 
-    def hold_out_validation(self):
+    def hold_out_validation(self, name=None):
         t0 = time.time()
+        history_name = name or 'default'
 
         ##############################
         # Step 1: get data
@@ -103,7 +113,7 @@ class ClassificationTask(AbstractTask):
             print("building data ...", file=self.logfile)
             self.model.build()
             print("building done, used %s.\n" % time_format(time.time() - t1), file=self.logfile)
-        
+
         train_xs, train_ys = self.data.get_train_data()
         self.output_data_statistics_info('train', train_ys)
 
@@ -127,53 +137,48 @@ class ClassificationTask(AbstractTask):
         ##############################
         # Step 3: execute model
         ##############################
+
+        epoch_train_execution = self.execution.train_execution
+        epoch_predict_execution = self.execution.predict_execution
+
+        self.evaluation.dock_train_metrics(self.model.train_metrics)
+        self.evaluation.dock_predict_metrics(self.model.predict_metrics)
+
         for epoch in range(self.execution.epochs):
             t1 = time.time()
 
             # training
-            confusion_mat, evaluation_mat, loss = Task._epoch_exe(
-                self.execution.exe_train, y_num, model=model_cls, all_xs=train_xs, all_ys=train_ys, lr=lr)
-            if 'training' in self.execution.aspects:
-                self.execution.add_history(history_name, 'training', confusion_mat, evaluation_mat, loss)
+            outputs = epoch_train_execution(self.model, train_xs, train_ys)
+            if 'training' in self.evaluation.aspects:
+                self.evaluation.add_training_history(history_name, outputs)
 
             # trained
-            if 'trained' in self.execution.aspects:
-                confusion_mat, evaluation_mat, loss = Task._epoch_exe(
-                    self.execution.exe_predict, y_num, model=model_cls, all_xs=train_xs, all_ys=train_ys)
-                self.execution.add_history(history_name, 'trained', confusion_mat, evaluation_mat, loss)
+            if 'trained' in self.evaluation.aspects:
+                outputs = epoch_predict_execution(self.model, train_xs, train_ys)
+                self.evaluation.add_trained_history(history_name, outputs)
 
-            # valid
-            if 'valid' in self.execution.aspects:
-                confusion_mat, evaluation_mat, loss = Task._epoch_exe(
-                    self.execution.exe_predict, y_num, model=model_cls, all_xs=valid_xs, all_ys=valid_ys)
-                self.execution.add_history(history_name, 'valid', confusion_mat, evaluation_mat, loss)
+            # validation
+            if 'valid' in self.evaluation.aspects:
+                outputs = epoch_predict_execution(self.model, valid_xs, valid_ys)
+                self.evaluation.add_validation_history(history_name, outputs)
             else:
                 raise OSError("Model must valid.")
 
             # test
-            if 'test' in self.execution.aspects:
-                confusion_mat, evaluation_mat, loss = Task._epoch_exe(
-                    self.execution.exe_predict, y_num, model=model_cls, all_xs=test_xs, all_ys=test_ys)
-                self.execution.add_history(history_name, 'test', confusion_mat, evaluation_mat, loss)
-            else:
-                raise OSError("Model must test.")
+            if 'test' in self.evaluation.aspects:
+                outputs = epoch_predict_execution(self.model, test_xs, test_ys)
+                self.evaluation.add_test_history(history_name, outputs)
 
-            # end work
-            self.execution.lr = lr * self.execution.decay
-            self.execution.output_epoch(history_name, epoch, file=file)
+            self.execution.output_epoch(history_name, epoch, file=self.logfile)
             print("Used time %s" % time_format(time.time() - t1))
-            file.flush()
-        else:
-            self.execution.output_bests(history_name, file=file)
-
+            self.logfile.flush()
 
         ##############################
         # Step 4: do evaluation
         ##############################
-        print("Used time %s" % time_format(time.time() - t0), file=file)
-        file.flush()
-        sys.stdout = stdout
-
+        self.execution.output_bests(history_name, file=self.logfile)
+        print("Used time %s" % time_format(time.time() - t0), file=self.logfile)
+        self.logfile.flush()
 
     def cross_validation(self):
         pass
