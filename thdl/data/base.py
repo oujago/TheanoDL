@@ -7,7 +7,18 @@ from thdl.base import ThObject
 from thdl.utils import random
 
 
-class Data(ThObject):
+class AbstractData(ThObject):
+    def get_xs(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_ys(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def to_json(self):
+        raise NotImplementedError
+
+
+class Data(AbstractData):
     def __init__(self, shuffle=True, shuffle_seed=None):
         self.shuffle = shuffle
         self.shuffle_seed = shuffle_seed
@@ -28,10 +39,6 @@ class Data(ThObject):
             "shuffle_seed": self.shuffle_seed,
         }
         return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
 
     def shuffle_data(self, xs, ys):
         if self.shuffle:

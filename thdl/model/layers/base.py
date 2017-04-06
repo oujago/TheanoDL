@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 
-import json
-
 from thdl.base import ThObject
 
 
 class Layer(ThObject):
+    output_shape = None
+
     def connect_to(self, pre_layer=None):
         raise NotImplementedError
 

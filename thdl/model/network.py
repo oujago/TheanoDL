@@ -200,7 +200,6 @@ class Model(AbstractModel):
 
         return config
 
-
     def _check_train_test_split(self, layer):
         if layer.__class__ in TRAIN_TEST_SPLIT_LAYERS:
             self.train_test_split = True
