@@ -6,37 +6,20 @@ from collections import Counter
 
 import numpy as np
 
-from thdl.task.base import AbstractTask
+from thdl.exeval import AbstractExeEval
 from thdl.data import AbstractData
-from thdl.evaluation import AbstractEvaluation
-from thdl.execution import AbstractExecution
 from thdl.model import AbstractModel
+from thdl.task.base import AbstractTask
 from thdl.utils.data_nlp_processing import yield_item
 from thdl.utils.usual import time_format
 
 
 class ClassificationTask(AbstractTask):
-    # def __init__(self, model=None, data=None, evaluation=None, execution=None,
-    #              logfile=sys.stdout):
-    #     # components
-    #     self.model = None
-    #     self.data = None
-    #     self.evaluation = None
-    #     self.execution = None
-    #
-    #     self.add_model(model)
-    #     self.add_data(data)
-    #     self.add_execution(execution)
-    #     self.add_evaluation(evaluation)
-    #
-    #     # log file
-    #     self.logfile = logfile
     def __init__(self):
         # components
         self.model = None
         self.data = None
-        self.evaluation = None
-        self.execution = None
+        self.exeval = None
 
         # log file
         self.logfile = sys.stdout
@@ -59,23 +42,14 @@ class ClassificationTask(AbstractTask):
         else:
             raise ValueError("Data already exists.")
 
-    def set_execution(self, execution):
-        if execution is None:
+    def set_exeval(self, exeval):
+        if exeval is None:
             return
-        assert isinstance(execution, AbstractExecution)
-        if self.execution is None:
-            self.execution = execution
+        assert isinstance(exeval, AbstractExeEval)
+        if self.exeval is None:
+            self.exeval = exeval
         else:
             raise ValueError("Execution already exists.")
-
-    def set_evaluation(self, evaluation):
-        if evaluation is None:
-            return
-        assert isinstance(evaluation, AbstractEvaluation)
-        if self.evaluation is None:
-            self.evaluation = evaluation
-        else:
-            raise ValueError("Evaluation already exists.")
 
     def set_logfile(self, logfile):
         self.logfile = logfile
@@ -85,8 +59,7 @@ class ClassificationTask(AbstractTask):
         for name, cls in (
                 ('Model Class', self.model),
                 ("Data Class", self.data),
-                ("Execute Class", self.execution),
-                ("Evaluation Class", self.evaluation)
+                ("ExeEval Class", self.exeval),
         ):
             print('%s Parameter:' % name, file=self.logfile)
             for key, value in sorted(cls.to_json().items()):
@@ -138,45 +111,45 @@ class ClassificationTask(AbstractTask):
         # Step 3: execute model
         ##############################
 
-        epoch_train_execution = self.execution.train_execution
-        epoch_predict_execution = self.execution.predict_execution
+        epoch_train_execution = self.exeval.train_execution
+        epoch_predict_execution = self.exeval.predict_execution
 
-        self.evaluation.dock_gpu_train_metrics(self.model.train_metrics)
-        self.evaluation.dock_gpu_predict_metrics(self.model.predict_metrics)
+        self.exeval.dock_gpu_train_metrics(self.model.train_metrics)
+        self.exeval.dock_gpu_predict_metrics(self.model.predict_metrics)
 
-        for epoch in range(self.execution.epochs):
+        for epoch in range(self.exeval.epochs):
             t1 = time.time()
 
             # training
             outputs = epoch_train_execution(self.model, train_xs, train_ys)
-            if 'training' in self.evaluation.aspects:
-                self.evaluation.add_training_history(history_name, outputs)
+            if 'training' in self.exeval.aspects:
+                self.exeval.add_training_history(history_name, outputs)
 
             # trained
-            if 'trained' in self.evaluation.aspects:
+            if 'trained' in self.exeval.aspects:
                 outputs = epoch_predict_execution(self.model, train_xs, train_ys)
-                self.evaluation.add_trained_history(history_name, outputs)
+                self.exeval.add_trained_history(history_name, outputs)
 
             # validation
-            if 'valid' in self.evaluation.aspects:
+            if 'valid' in self.exeval.aspects:
                 outputs = epoch_predict_execution(self.model, valid_xs, valid_ys)
-                self.evaluation.add_validation_history(history_name, outputs)
+                self.exeval.add_validation_history(history_name, outputs)
             else:
                 raise OSError("Model must valid.")
 
             # test
-            if 'test' in self.evaluation.aspects:
+            if 'test' in self.exeval.aspects:
                 outputs = epoch_predict_execution(self.model, test_xs, test_ys)
-                self.evaluation.add_test_history(history_name, outputs)
+                self.exeval.add_test_history(history_name, outputs)
 
-            self.execution.output_epoch(history_name, epoch, file=self.logfile)
+            self.exeval.output_epoch(history_name, epoch, file=self.logfile)
             print("Used time %s" % time_format(time.time() - t1))
             self.logfile.flush()
 
         ##############################
         # Step 4: do evaluation
         ##############################
-        self.execution.output_bests(history_name, file=self.logfile)
+        self.exeval.output_bests(history_name, file=self.logfile)
         print("Used time %s" % time_format(time.time() - t0), file=self.logfile)
         self.logfile.flush()
 

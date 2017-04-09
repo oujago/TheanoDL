@@ -23,10 +23,7 @@ class AbstractTask(ThdlObj):
     def set_data(self, data):
         raise NotImplementedError
 
-    def set_execution(self, execution):
-        raise NotImplementedError
-
-    def set_evaluation(self, evaluation):
+    def set_exeval(self, exeval):
         raise NotImplementedError
 
     def set_logfile(self, logfile):

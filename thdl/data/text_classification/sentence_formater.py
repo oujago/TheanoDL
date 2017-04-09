@@ -7,26 +7,39 @@ import csv
 
 def movie_review_corpus(file_folder, save_path):
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:
+        print("Opening 'rt-polarity.pos' file ...")
         with open(os.path.join(os.getcwd(), file_folder, 'rt-polarity.pos'), encoding='latin-1') as pos_f:
+            print("Opening 'rt-polarity.neg' file ...")
             with open(os.path.join(os.getcwd(), file_folder,'rt-polarity.neg'), encoding='latin-1') as neg_f:
-                for pos_line, neg_line in zip(pos_f, neg_f):
+                for i, pos_line, neg_line in enumerate(zip(pos_f, neg_f)):
                     pos_line = pos_line.strip()
                     f.write("%s\t%s\n" % ("positive", pos_line))
                     neg_line = neg_line.strip()
                     f.write("%s\t%s\n" % ('negative', neg_line))
 
+                    if (i + 1) % 1000 == 0:
+                        print("processed %d pair sentences ..." % (i + 1))
+                print("The handling of movie review is done.\n")
+
 
 def subjective_corpus(file_folder, save_path):
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:
+        print("Opening 'quote.tok.gt9.5000' file ...")
         with open(os.path.join(os.getcwd(), file_folder, 'quote.tok.gt9.5000'), encoding='latin-1') as subj_f:
+            print("Opening 'plot.tok.gt9.5000' file ...")
             with open(os.path.join(os.getcwd(), file_folder, 'plot.tok.gt9.5000'), encoding='latin-1') as obj_f:
-                for subj_line, obj_line in zip(subj_f, obj_f):
+                for i, subj_line, obj_line in enumerate(zip(subj_f, obj_f)):
                     f.write('%s\t%s\n' % ("subjective", subj_line.strip()))
                     f.write('%s\t%s\n' % ("objective", obj_line.strip()))
+
+                    if (i + 1) % 1000 == 0:
+                        print("processed %d pair sentences ..." % (i + 1))
+                print("The handling of subjective corpus is done.\n")
 
 
 def _stanford_sentiment_treebank(file_folder):
 
+    print("Reading all sentences ...")
     sentences = {}
     with open(os.path.join(os.getcwd(), file_folder, "datasetSentences.txt"), "r") as f:
         rd = csv.reader(f, delimiter='\t')
@@ -57,7 +70,9 @@ def _stanford_sentiment_treebank(file_folder):
             line[1] = line[1].replace('\xa0', ' ')
             line[1] = line[1].replace('\xc2', '')
             sentences[line[0]] = line[1]
+    print("Sentence reading is done.\n")
 
+    print("Reading 'datasetSplit.txt' ...")
     train = {}
     test = {}
     dev = {}
@@ -76,7 +91,9 @@ def _stanford_sentiment_treebank(file_folder):
                 test[sentences[line[0]]] = 0
             elif line[1] == '3':
                 dev[sentences[line[0]]] = 0
+    print("Reading is done.\n")
 
+    print("Reading 'dictionary.txt' ...")
     train_sent = train.copy()
     string = " ".join(sents)
     with open(os.path.join(os.getcwd(), file_folder, "dictionary.txt"), "r") as f:
@@ -108,7 +125,9 @@ def _stanford_sentiment_treebank(file_folder):
                 train_sent[line[0]] = line[1]
             if line[0] in dev:
                 dev[line[0]] = line[1]
+    print("Reading id done.\n")
 
+    print("Reading 'sentiment_labels.txt' ...")
     labels = {}
     with open(os.path.join(os.getcwd(), file_folder, "sentiment_labels.txt"), "r") as f:
         rd = csv.reader(f, delimiter='|')
@@ -118,7 +137,9 @@ def _stanford_sentiment_treebank(file_folder):
                 count = 1
                 continue
             labels[line[0]] = float(line[1])
+    print("Reading is done.\n")
 
+    print("Changing keys ...")
     for key in train:
         train[key] = labels[train[key]]
     for key in train_sent:
@@ -126,7 +147,8 @@ def _stanford_sentiment_treebank(file_folder):
     for key in test:
         test[key] = labels[test[key]]
     for key in dev:
-        dev[key] = labels[dev[key]]
+        dev[key] = labels[str(dev[key])]
+    print("Changing is done.")
 
     return train, train_sent, test, dev
 
@@ -141,10 +163,9 @@ def stanford_sentiment_treebank_phrase(file_folder, save_path):
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:
         f.write(runout)
         for data_set, split_name in [(train, 'train'), (valid, 'valid'), (test, 'test')]:
-            for score, sen in data_set.items():
+            for sen, score in data_set.items():
                 score = float(score)
 
-                # sen = sen.replace('\xa0', ' ')
                 if 0 <= score <= 0.2:
                     score_ = 'very_negative'
                 elif 0.2 < score <= 0.4:
@@ -166,6 +187,7 @@ def trec_corpus(file_folder, save_path):
     # train data
     test_idx = 0
     for split, path in [('test', 'TREC_10.label'), ('train', 'train_5500.label'), ]:
+        print("Processing %s corpus ..." % path)
         with open(os.path.join(os.getcwd(), file_folder, path), encoding='latin-1') as f:
             for line in f:
                 splits = line.strip().split(" ")
@@ -173,6 +195,7 @@ def trec_corpus(file_folder, save_path):
                 res.append((split, label, ' '.join(splits[1:])))
                 if split == 'test':
                     test_idx += 1
+        print("Processing is done.")
 
     # write into file
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:

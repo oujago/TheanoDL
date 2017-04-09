@@ -25,8 +25,10 @@ class Model(AbstractModel):
         self.train_test_split = False
 
         # function
-        self.func_train = None
-        self.func_predict = None
+        self.train_func_for_eval = None
+        self.predict_func_for_eval = None
+        self.train_func_for_res = None
+        self.predict_func_for_eval = None
 
         # in and out
         self.input_tensor = None
@@ -72,7 +74,7 @@ class Model(AbstractModel):
         self.comp_layers.append(layer)
         self._check_train_test_split(layer)
 
-    def set_metrics(self, metrics=None, train_metrics=None, test_metrics=None):
+    def set_metrics(self, metrics=None, train_metrics=None, predict_metrics=None):
         self.metrics = metrics
 
         if train_metrics is None:
@@ -80,10 +82,10 @@ class Model(AbstractModel):
         else:
             self.train_metrics = train_metrics
 
-        if test_metrics is None:
+        if predict_metrics is None:
             self.predict_metrics = metrics
         else:
-            self.predict_metrics = test_metrics
+            self.predict_metrics = predict_metrics
 
     def build(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
 
@@ -132,15 +134,15 @@ class Model(AbstractModel):
         # train functions
         inputs = [self.input_tensor, self.output_tensor]
         train_outputs = [train_ys, ] + self.train_metrics
-        self.func_train = function(inputs=inputs,
-                                   outputs=train_outputs,
-                                   updates=updates)
+        self.train_func_for_eval = function(inputs=inputs,
+                                            outputs=train_outputs,
+                                            updates=updates)
 
         # test functions
         inputs = [self.input_tensor, self.output_tensor]
         test_outputs = [predict_ys, ] + self.predict_metrics
-        self.func_predict = function(inputs=inputs,
-                                     outputs=test_outputs)
+        self.predict_func_for_eval = function(inputs=inputs,
+                                              outputs=test_outputs)
 
     def _forward(self, train=True):
         pre_layer_output = self.input_tensor

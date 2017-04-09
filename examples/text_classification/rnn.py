@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 
 
+from thdl.data.text_classification import SentenceGetter
+from thdl.data.text_classification import SentenceProcessor
 from thdl.data.text_classification import SentenceProvider
 from thdl import model
-from thdl.execution import Execution
-from thdl.evaluation import ClassificationEvaluation
+from thdl.exeval import ClassifyExeEval
 from thdl.task import ClassificationTask
 
 
 # data
-data_module = SentenceProvider(
-    corpus_name='sst',
-    w2v_type='glove.840B.300d',
-    w2v_dim=300,
-    lower_case=True,
-    maxlen=30
-)
+data_getter = SentenceGetter('sst')
+data_processor = SentenceProcessor()
+data_module = SentenceProvider(shuffle=True)
+data_module.set_getter(data_getter)
+data_module.set_processor(data_processor)
 data_module.build()
+
 
 # model
 model_module = model.Model()
@@ -29,23 +29,20 @@ model_module.add_layer(model.layers.Softmax(n_out=10))
 model_module.set_output_tensor(model.tensors.fmatrix())
 model_module.set_objective(model.objective.CategoricalCrossEntropy())
 model_module.set_optimizer(model.optimizer.Adam())
-model_module.set_metrics()
+model_module.set_metrics([model.metrics.precision, model.metrics.recall])
 model_module.build()
 
-# execution
-exe_module = Execution(batch_size=40)
 
-
-# evaluation
-eval_module = ClassificationEvaluation(aspects=('training', 'valid'))
+# execution and evaluation
+exeval_module = ClassifyExeEval(batch_size=40)
+exeval_module.set_aspects('training', 'valid', 'test')
 
 
 # task
 task = ClassificationTask()
 task.set_model(model_module)
 task.set_data(data_module)
-task.set_execution(exe_module)
-task.set_evaluation(eval_module)
+task.set_exeval(exeval_module)
 task.set_logfile(open("test.log", 'w'))
 
 # run

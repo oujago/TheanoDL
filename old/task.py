@@ -6,12 +6,12 @@ import time
 from collections import Counter
 
 import numpy as np
-
-from thdl.utils.usual import time_format
-from thdl.utils.data_nlp_processing import yield_item
-from thdl.data import Data
-from thdl.evaluation import Evaluation
 from thdl.execution import Execution
+
+from old.evaluation import Evaluation
+from thdl.data import Data
+from thdl.utils.data_nlp_processing import yield_item
+from thdl.utils.usual import time_format
 
 
 class Task:

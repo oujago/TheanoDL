@@ -5,59 +5,17 @@ from ..base import Data
 
 
 class SentenceProvider(Data):
-    def __init__(self, corpus_name,
-                 w2v_type='google', w2v_dim=300,
-                 folder_num=None, test_idx=None, valid_idx=None,
-                 lower_case=True, threshold=1, remove_punc=True, test_from='train',
-                 maxlen=30, dtype='int32', padding='pre', truncating='pre', value=-1, **kwargs):
-        """
-        :param corpus_name: like
-                'mr'
+    def __init__(self, shuffle=True, shuffle_seed=None, index_to_tag=None):
+        super(SentenceProvider, self).__init__(shuffle, shuffle_seed, index_to_tag)
 
-        :param getting_params: like
-                {
-                    'corpus_name': 'mr',
-                    'lower_case': True,
-                    "threshold": 1,
-                    "w2v_type": 'google',
-                    'w2v_dim': 300,
-                    'folder_num': 10,
-                    'test_idx': 0,
-                    'valid_idx': 1,
-                    'remove_punc': True,
-                    'test_from': 'train',
-                }
+        self.getter = None
+        self.processor = None
 
-        :param precessing_params:
-                {
-                    'maxlen': 50,
-                    'dtype': 'int32',
-                    'padding': 'post',
-                    'truncating': 'pre',
-                    'value': 0.
-                }
-        """
-        super(SentenceProvider, self).__init__(**kwargs)
-        self.corpus_name = corpus_name
-        self.getting_params = {
-            'lower_case': lower_case,
-            "threshold": threshold,
-            "w2v_type": w2v_type,
-            'w2v_dim': w2v_dim,
-            'remove_punc': remove_punc,
-            'test_from': test_from,
-            'folder_num': folder_num,
-            'test_idx': test_idx,
-            'valid_idx': valid_idx,
-        }
-        self.precessing_params = {
-            'maxlen': maxlen,
-            'dtype': dtype,
-            'padding': padding,
-            'truncating': truncating,
-            'value': value
-        }
-        self.data_cls = SentenceGetter(corpus_name=corpus_name, **self.getting_params)
+    def set_getter(self, getter):
+        self.getter = getter
+
+    def set_processor(self, processor):
+        self.processor = processor
 
         self.valid_indices = None
         self.train_indices = None
@@ -141,3 +99,6 @@ class SentenceProvider(Data):
         config.update(self.getting_params)
         config.update(self.precessing_params)
         return config
+
+
+

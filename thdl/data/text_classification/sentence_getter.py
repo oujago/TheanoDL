@@ -6,6 +6,7 @@ from collections import Counter
 import numpy as np
 from nltk import word_tokenize
 
+from thdl.base import ThdlObj
 from thdl.utils.data_nlp_processing import get_split
 from thdl.utils.data_nlp_processing import item_list2index_list
 from thdl.utils.data_nlp_processing import yield_item
@@ -14,8 +15,8 @@ from thdl.utils.file import pickle_load
 from ..w2v import W2VGet
 
 
-class SentenceGetter:
-    def __init__(self, corpus_name, folder_num=None, test_idx=None, valid_idx=None, **kwargs):
+class SentenceGetter(ThdlObj):
+    def __init__(self, corpus_name, folder_num=None, test_idx=None, valid_idx=None):
         """
         If folder_num and test_idx are provided,
         then this is the [test_idx]-th folder of [folder_num] cross validation.

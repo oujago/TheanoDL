@@ -32,5 +32,6 @@ def trec():
 
 
 if __name__ == '__main__':
-    pass
-
+    # subjective()
+    sst_phrase()
+    trec()
