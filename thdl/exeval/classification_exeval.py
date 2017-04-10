@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+import numpy as np
 from .base import AbstractExeEval
 
 
@@ -104,10 +105,10 @@ class ClassifyExeEval(AbstractExeEval):
         if history_name not in self.histories:
             self.histories[history_name] = {}
 
-        if 'training' not in self.histories[history_name]:
-            self.histories[history_name]['training'] = []
+        if aspect not in self.histories[history_name]:
+            self.histories[history_name][aspect] = []
 
-        self.histories[history_name]['training'].append(outputs)
+        self.histories[history_name][aspect].append(outputs)
 
     def add_training_history(self, history_name, outputs):
         self.add_history(history_name, 'training', outputs)
@@ -142,6 +143,8 @@ class ClassifyExeEval(AbstractExeEval):
         # output
         print(runout, file=file)
 
+    def output_bests(self, history_name, file):
+        pass
 
     def _execution(self, x_data, y_data, func_to_exe):
         total_len = x_data.shape[0]
@@ -154,7 +157,7 @@ class ClassifyExeEval(AbstractExeEval):
             ys = y_data[self.batch_size * i: self.batch_size * (i + 1)]
             res = func_to_exe(xs, ys)
 
-            outputs.extend(list(res[1:]))
+            outputs.append(list(res[1:]))
 
         else:
             if self.batch_size * (i + 1) < total_len:
@@ -165,12 +168,14 @@ class ClassifyExeEval(AbstractExeEval):
 
                 res = func_to_exe(xs, ys)
 
-                outputs.extend(list(res[1:]))
+                outputs.append(list(res[1:]))
+
+        outputs = np.mean(np.asarray(outputs), axis=1)
 
         return outputs
 
     def train_execution(self, model, all_xs, all_ys):
-        return self._execution(all_xs, all_ys, model.func_train)
+        return self._execution(all_xs, all_ys, model.train_func_for_eval)
 
     def predict_execution(self, model, all_xs, all_ys):
-        return self._execution(all_xs, all_ys, model.func_predict)
+        return self._execution(all_xs, all_ys, model.predict_func_for_eval)

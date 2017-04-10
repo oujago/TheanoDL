@@ -8,10 +8,10 @@ class AbstractTask(ThdlObj):
     def output_config(self):
         raise NotImplementedError
 
-    def hold_out_validation(self):
+    def hold_out_validation(self, *args, **kwargs):
         raise NotImplementedError
 
-    def cross_validation(self):
+    def cross_validation(self, *args, **kwargs):
         raise NotImplementedError
 
     def to_json(self):

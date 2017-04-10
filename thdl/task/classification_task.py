@@ -72,20 +72,21 @@ class ClassificationTask(AbstractTask):
             print("", file=self.logfile)
         self.logfile.flush()
 
-    def hold_out_validation(self, name=None):
+    def hold_out_validation(self, name=None, plot=False):
         t0 = time.time()
         history_name = name or 'default'
 
         ##############################
         # Step 1: get data
         ##############################
-        if self.data.index2tag:
+        if self.data.index_to_tag:
             print("DataProvider has been build.\n", file=self.logfile)
         else:
             t1 = time.time()
             print("building data ...", file=self.logfile)
-            self.model.build()
+            self.data.build()
             print("building done, used %s.\n" % time_format(time.time() - t1), file=self.logfile)
+            assert self.data.index_to_tag
 
         train_xs, train_ys = self.data.get_train_data()
         self.output_data_statistics_info('train', train_ys)
@@ -99,13 +100,14 @@ class ClassificationTask(AbstractTask):
         ##############################
         # Step 2: build model
         ##############################
-        if self.model.func_train and self.model.func_predict:
+        if self.model.train_func_for_eval and self.model.train_func_for_eval:
             print("Model has been build.\n", file=self.logfile)
         else:
             t1 = time.time()
             print("building model ...", file=self.logfile)
             self.model.build()
             print("building done, used %s.\n" % time_format(time.time() - t1), file=self.logfile)
+            assert self.model.train_func_for_eval and self.model.train_func_for_eval
 
         ##############################
         # Step 3: execute model
@@ -142,7 +144,7 @@ class ClassificationTask(AbstractTask):
                 outputs = epoch_predict_execution(self.model, test_xs, test_ys)
                 self.exeval.add_test_history(history_name, outputs)
 
-            self.exeval.output_epoch(history_name, epoch, file=self.logfile)
+            self.exeval.output_epoch_evaluation(history_name, epoch, file=self.logfile)
             print("Used time %s" % time_format(time.time() - t1))
             self.logfile.flush()
 
@@ -172,10 +174,10 @@ class ClassificationTask(AbstractTask):
         if np.ndim(ys) == 1:
             counter = Counter(yield_item(ys))
         elif np.ndim(ys) == 2:
-            counter = Counter(yield_item(np.argmax(ys, axis=0)))
+            counter = Counter(yield_item(np.argmax(ys, axis=1)))
         else:
             raise ValueError
 
         for key, value in sorted(counter.items()):
-            print("\t%s data number - %d" % (self.data.index2tag[key], value), file=self.logfile)
+            print("\t%s data number - %d" % (self.data.index_to_tag[key], value), file=self.logfile)
         print("", file=self.logfile)

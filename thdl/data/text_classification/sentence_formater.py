@@ -178,7 +178,8 @@ def stanford_sentiment_treebank_phrase(file_folder, save_path):
                     score_ = 'very_positive'
                 else:
                     raise ValueError("Invalid score.")
-                f.write("%s\t%s\t%s\n" % (split_name, score_, sen))
+                # f.write("%s\t%s\t%s\n" % (split_name, score_, sen))
+                f.write("%s\t%s\n" % (score_, sen))
 
 
 def trec_corpus(file_folder, save_path):
@@ -201,6 +202,6 @@ def trec_corpus(file_folder, save_path):
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:
         f.write("test-%d-%d\nvalid-%d-%d\n" % (0, test_idx, test_idx, test_idx))
         for split, label, sentence in res:
-            f.write("%s\t%s\t%s\n" % (split, label, sentence))
+            f.write("%s\t%s\n" % (label, sentence))
 
 

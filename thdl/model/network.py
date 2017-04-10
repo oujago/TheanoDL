@@ -12,6 +12,8 @@ from .base import AbstractModel
 from .layers import Dropout
 from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
+from .metrics import Regularizer
+from .metrics import Loss
 
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
 
@@ -40,7 +42,6 @@ class Model(AbstractModel):
         self.comp_optimizer = None
 
         # metric
-        self.metrics = None
         self.train_metrics = None
         self.predict_metrics = None
 
@@ -75,17 +76,28 @@ class Model(AbstractModel):
         self._check_train_test_split(layer)
 
     def set_metrics(self, metrics=None, train_metrics=None, predict_metrics=None):
-        self.metrics = metrics
+        self.train_metrics = []
+        self.predict_metrics = []
 
-        if train_metrics is None:
-            self.train_metrics = metrics
-        else:
-            self.train_metrics = train_metrics
+        if metrics:
+            if type(metrics) in [tuple, list]:
+                self.train_metrics.extend(metrics)
+                self.predict_metrics.extend(metrics)
+            else:
+                self.train_metrics.append(metrics)
+                self.predict_metrics.append(metrics)
 
-        if predict_metrics is None:
-            self.predict_metrics = metrics
-        else:
-            self.predict_metrics = predict_metrics
+        if train_metrics:
+            if type(train_metrics) in [list, tuple]:
+                self.train_metrics.extend(train_metrics)
+            else:
+                self.train_metrics.append(train_metrics)
+
+        if predict_metrics:
+            if type(predict_metrics) in [tuple, list]:
+                self.predict_metrics.extend(predict_metrics)
+            else:
+                self.predict_metrics.append(predict_metrics)
 
     def build(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
 
@@ -100,6 +112,7 @@ class Model(AbstractModel):
         pre_layer = None
         for layer in self.comp_layers:
             layer.connect_to(pre_layer)
+            pre_layer = layer
 
         # forward
         train_prob_ys, train_ys, train_loss = self._forward(True)
@@ -118,7 +131,7 @@ class Model(AbstractModel):
         losses = regularizer_loss + train_loss
 
         # params
-        params = ()
+        params = []
         for layer in self.comp_layers:
             params += layer.params
 
@@ -128,19 +141,31 @@ class Model(AbstractModel):
             layer_updates.update(layer.updates)
 
         # model updates
-        updates = self.comp_optimizer(params, sum(losses))
+        updates = self.comp_optimizer(params, tensor.sum(losses))
         updates.update(layer_updates)
 
         # train functions
         inputs = [self.input_tensor, self.output_tensor]
-        train_outputs = [train_ys, ] + self.train_metrics
+        train_outputs = [train_ys, ]
+        for metric in self.train_metrics:
+            if isinstance(metric, Regularizer):
+                train_outputs.append(regularizer_loss)
+            elif isinstance(metric, Loss):
+                train_outputs.append(train_loss)
+            else:
+                train_outputs.append(metric(train_prob_ys, self.output_tensor))
         self.train_func_for_eval = function(inputs=inputs,
                                             outputs=train_outputs,
                                             updates=updates)
 
         # test functions
         inputs = [self.input_tensor, self.output_tensor]
-        test_outputs = [predict_ys, ] + self.predict_metrics
+        test_outputs = [predict_ys, ]
+        for metric in self.predict_metrics:
+            if isinstance(metric, Loss):
+                test_outputs.append(predict_loss)
+            else:
+                test_outputs.append(metric(predict_prob_ys, self.output_tensor))
         self.predict_func_for_eval = function(inputs=inputs,
                                               outputs=test_outputs)
 

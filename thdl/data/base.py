@@ -10,12 +10,6 @@ from thdl.utils import random
 class AbstractData(ThdlObj):
     index_to_tag = None
 
-    def get_xs(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def get_ys(self, *args, **kwargs):
-        raise NotImplementedError
-
     def to_json(self):
         raise NotImplementedError
 

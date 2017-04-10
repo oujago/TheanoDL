@@ -19,11 +19,11 @@ class Dropout(Layer):
         self.input_shape = input_shape
 
         if seed is None:
-            seed = get_rng().randint(10000, 100000000000)
+            seed = get_rng().randint(1, 2147462579)
         self.srng = RandomStreams(seed)
 
     def connect_to(self, pre_layer=None):
-        if pre_layer is None:
+        if pre_layer:
             self.output_shape = pre_layer.output_shape
         else:
             assert self.input_shape is not None
