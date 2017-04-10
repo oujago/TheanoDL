@@ -6,43 +6,16 @@ from collections import OrderedDict
 from theano import function
 from theano import tensor
 
+from thdl.model.tensors import get_tensor
 from thdl.utils.random import set_seed
+from .base import AbstractModel
 from .layers import Dropout
 from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
-
+from .metrics import Regularizer
+from .metrics import Loss
 
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
-
-
-class AbstractModel(object):
-    def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
-        raise NotImplementedError()
-
-    def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
-        raise NotImplementedError()
-
-    def add_layer(self, layer):
-        raise NotImplementedError()
-
-    def set_objective(self, loss_func):
-        raise NotImplementedError()
-
-    def set_optimizer(self, optimizer):
-        raise NotImplementedError()
-
-    def set_metrics(self, metrics):
-        raise NotImplementedError()
-
-    def build(self, **kwargs):
-        raise NotImplementedError()
-
-    def to_json(self):
-        raise NotImplementedError
-
-    @classmethod
-    def from_json(cls, config):
-        raise NotImplementedError()
 
 
 class Model(AbstractModel):
@@ -54,8 +27,10 @@ class Model(AbstractModel):
         self.train_test_split = False
 
         # function
-        self.func_train = None
-        self.func_predict = None
+        self.train_func_for_eval = None
+        self.predict_func_for_eval = None
+        self.train_func_for_res = None
+        self.predict_func_for_eval = None
 
         # in and out
         self.input_tensor = None
@@ -67,20 +42,25 @@ class Model(AbstractModel):
         self.comp_optimizer = None
 
         # metric
-        self.metrics = None
         self.train_metrics = None
-        self.test_metrics = None
+        self.predict_metrics = None
 
     def set_input_tensor(self, input_tensor=None, in_dim=None, in_tensor_type=None):
         if input_tensor:
-            self.input_tensor = input_tensor
+            if isinstance(input_tensor, tensor.TensorVariable):
+                self.input_tensor = input_tensor
+            else:
+                self.input_tensor = get_tensor(input_tensor)
         else:
             assert in_dim and in_tensor_type
             self.input_tensor = tensor.TensorType(in_tensor_type, [False] * in_dim)()
 
     def set_output_tensor(self, output_tensor=None, out_dim=None, out_tensor_type=None):
         if output_tensor:
-            self.output_tensor = output_tensor
+            if isinstance(output_tensor, tensor.TensorVariable):
+                self.output_tensor = output_tensor
+            else:
+                self.output_tensor = get_tensor(output_tensor)
         else:
             assert out_dim and out_tensor_type
             self.output_tensor = tensor.TensorType(out_tensor_type, [False] * out_dim)()
@@ -95,18 +75,29 @@ class Model(AbstractModel):
         self.comp_layers.append(layer)
         self._check_train_test_split(layer)
 
-    def set_metrics(self, metrics=None, train_metrics=None, test_metrics=None):
-        self.metrics = metrics
+    def set_metrics(self, metrics=None, train_metrics=None, predict_metrics=None):
+        self.train_metrics = []
+        self.predict_metrics = []
 
-        if train_metrics is None:
-            self.train_metrics = metrics
-        else:
-            self.train_metrics = train_metrics
+        if metrics:
+            if type(metrics) in [tuple, list]:
+                self.train_metrics.extend(metrics)
+                self.predict_metrics.extend(metrics)
+            else:
+                self.train_metrics.append(metrics)
+                self.predict_metrics.append(metrics)
 
-        if test_metrics is None:
-            self.test_metrics = metrics
-        else:
-            self.test_metrics = test_metrics
+        if train_metrics:
+            if type(train_metrics) in [list, tuple]:
+                self.train_metrics.extend(train_metrics)
+            else:
+                self.train_metrics.append(train_metrics)
+
+        if predict_metrics:
+            if type(predict_metrics) in [tuple, list]:
+                self.predict_metrics.extend(predict_metrics)
+            else:
+                self.predict_metrics.append(predict_metrics)
 
     def build(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
 
@@ -121,6 +112,7 @@ class Model(AbstractModel):
         pre_layer = None
         for layer in self.comp_layers:
             layer.connect_to(pre_layer)
+            pre_layer = layer
 
         # forward
         train_prob_ys, train_ys, train_loss = self._forward(True)
@@ -139,7 +131,7 @@ class Model(AbstractModel):
         losses = regularizer_loss + train_loss
 
         # params
-        params = ()
+        params = []
         for layer in self.comp_layers:
             params += layer.params
 
@@ -149,21 +141,33 @@ class Model(AbstractModel):
             layer_updates.update(layer.updates)
 
         # model updates
-        updates = self.comp_optimizer(params, sum(losses))
+        updates = self.comp_optimizer(params, tensor.sum(losses))
         updates.update(layer_updates)
 
         # train functions
         inputs = [self.input_tensor, self.output_tensor]
-        train_outputs = [train_ys, ] + self.train_metrics
-        self.func_train = function(inputs=inputs,
-                                   outputs=train_outputs,
-                                   updates=updates)
+        train_outputs = [train_ys, ]
+        for metric in self.train_metrics:
+            if isinstance(metric, Regularizer):
+                train_outputs.append(regularizer_loss)
+            elif isinstance(metric, Loss):
+                train_outputs.append(train_loss)
+            else:
+                train_outputs.append(metric(train_prob_ys, self.output_tensor))
+        self.train_func_for_eval = function(inputs=inputs,
+                                            outputs=train_outputs,
+                                            updates=updates)
 
         # test functions
         inputs = [self.input_tensor, self.output_tensor]
-        test_outputs = [predict_ys, ] + self.test_metrics
-        self.func_predict = function(inputs=inputs,
-                                     outputs=test_outputs)
+        test_outputs = [predict_ys, ]
+        for metric in self.predict_metrics:
+            if isinstance(metric, Loss):
+                test_outputs.append(predict_loss)
+            else:
+                test_outputs.append(metric(predict_prob_ys, self.output_tensor))
+        self.predict_func_for_eval = function(inputs=inputs,
+                                              outputs=test_outputs)
 
     def _forward(self, train=True):
         pre_layer_output = self.input_tensor
@@ -203,11 +207,6 @@ class Model(AbstractModel):
 
         return config
 
-    @classmethod
-    def from_json(cls, config):
-        raise NotImplementedError()
-
     def _check_train_test_split(self, layer):
         if layer.__class__ in TRAIN_TEST_SPLIT_LAYERS:
             self.train_test_split = True
-

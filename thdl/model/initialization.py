@@ -4,6 +4,7 @@
 import numpy as np
 import theano
 
+from thdl.base import ThdlObj
 from thdl.utils.random import get_dtype
 from thdl.utils.random import get_rng
 
@@ -12,12 +13,15 @@ def shared(value, borrow=True):
     return theano.shared(value=value, borrow=borrow)
 
 
-class Initializer(object):
+class Initializer(ThdlObj):
     def __call__(self, size):
         return self.call(size)
 
     def call(self, size):
         raise NotImplementedError()
+
+    def to_json(self):
+        return {}
 
 
 class Zero(Initializer):
@@ -40,6 +44,9 @@ class Uniform(Initializer):
         value = value.astype(get_dtype())
         return shared(value)
 
+    def to_json(self):
+        return {'scale': self.scale}
+
 
 class Normal(Initializer):
     def __init__(self, scale=0.05):
@@ -50,8 +57,11 @@ class Normal(Initializer):
         value = value.astype(get_dtype())
         return shared(value)
 
+    def to_json(self):
+        return {'scale': self.scale}
 
-class LecunUniform(Initializer):
+
+class LecunUniform(Uniform):
     """
     Reference: LeCun 98, Efficient Backprop
         http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf
@@ -126,4 +136,3 @@ def _decompose_size(size):
 
 _zero = Zero()
 _one = One()
-

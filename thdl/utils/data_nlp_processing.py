@@ -2,6 +2,22 @@
 
 import re
 import numpy as np
+from .random import get_dtype
+
+
+def one_hot(labels, nb_classes=None, dtype=get_dtype()):
+    labels = np.asarray(labels)
+    classes = np.unique(labels)
+    if nb_classes is None:
+        nb_classes = classes.size
+    one_hot_labels = np.zeros((labels.shape[0], nb_classes), dtype=dtype)
+    for i, c in enumerate(classes):
+        one_hot_labels[labels == c, i] = 1
+    return one_hot_labels
+
+
+def unhot(one_hot_labels):
+    return np.argmax(one_hot_labels, axis=-1)
 
 
 def clean_str(string):
@@ -21,7 +37,7 @@ def clean_str(string):
     return string
 
 
-def remove_punc(string):
+def remove_punctuation(string):
     string = re.sub(r"[^A-Za-z0-9'-]", " ", string)
     return string
 
@@ -69,7 +85,7 @@ def yield_item(iterable):
     :param iterable:
     """
     for item in iterable:
-        if type(item).__name__ == 'list':
+        if type(item) in [list, tuple]:
             for elem in yield_item(item):
                 yield elem
         else:
@@ -91,7 +107,6 @@ def _item_list2index_list(item_iter, index_iter, item2index, unknown='UNKNOWN'):
             _item_list2index_list(item, item_list, item2index, unknown)
             index_iter.append(item_list)
         else:
-            item = item
             if item in item2index:
                 index_iter.append(item2index[item])
             else:
@@ -102,7 +117,6 @@ def item_list2index_list(item_iter, item2index, unknown='UNKNOWN'):
     """
     Transform the item list to the index list, by using item2index.
     :param item_iter: the item_list
-    :param index_iter: the index list
     :param item2index:
     :param unknown: if item not in the item2index, using unknown instead.
     :return:

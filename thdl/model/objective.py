@@ -2,13 +2,18 @@
 
 from theano import tensor
 
+from thdl.base import ThdlObj
 
-class Objective(object):
+
+class Objective(ThdlObj):
     def __call__(self, outputs, targets):
         return self.call(outputs, targets)
 
     def call(self, outputs, targets):
         raise NotImplementedError()
+
+    def to_json(self, *args, **kwargs):
+        return {}
 
 
 class MeanSquaredError(Objective):

@@ -1,30 +1,20 @@
 # -*- coding: utf-8 -*-
 
 
-import json
-from collections import OrderedDict
+from thdl.base import ThdlObj
 
 
-class Layer(object):
+class Layer(ThdlObj):
+    output_shape = None
+
     def connect_to(self, pre_layer=None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def forward(self, input, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def to_json(self):
-        raise NotImplementedError()
-
-    @classmethod
-    def from_json(cls, config):
-        if type(config).__name__ == 'str':
-            config = json.loads(config)
-
-        if type(config).__name__ == 'dict':
-            return cls(**config)
-
-        else:
-            raise ValueError("config must be dict object.")
+        raise NotImplementedError
 
     @property
     def params(self):

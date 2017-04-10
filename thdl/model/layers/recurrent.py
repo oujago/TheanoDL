@@ -75,13 +75,15 @@ class Recurrent(Layer):
     def get_forward(self, input, outputs_info, unfixed_step, fixed_step, index=None):
         # input
         if input.ndim == 3:
-            for info in outputs_info:
-                info = tensor.alloc(np.cast[get_dtype()](0.), input.shape[0], self.n_out)
+            for i in range(len(outputs_info)):
+                if outputs_info[i] is None:
+                    outputs_info[i] = tensor.alloc(np.cast[get_dtype()](0.), input.shape[0], self.n_out)
             input = input.dimshuffle((1, 0, 2))
 
         elif input.ndim == 2:
-            for info in outputs_info:
-                info = tensor.alloc(np.cast[get_dtype()](0.), self.n_out)
+            for i in range(len(outputs_info)):
+                if outputs_info[i] is None:
+                    outputs_info[i] = tensor.alloc(np.cast[get_dtype()](0.), self.n_out)
             input = input
 
         else:
