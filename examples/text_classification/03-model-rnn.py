@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
-from thdl.data import text_classification  as corpus
+from thdl.data import text_classification as corpus
 from thdl import model
 from thdl.exeval import ClassifyExeEval
 from thdl.task import ClassificationTask
-
 
 # data
 data_getter = corpus.SentenceGetter('./files/handled/trec.data')
@@ -14,7 +13,6 @@ data_module = corpus.SentenceProvider(shuffle=True)
 data_module.set_getter(data_getter)
 data_module.set_processor(data_processor)
 data_module.build()
-
 
 # model
 model_module = model.Model()
@@ -32,11 +30,9 @@ model_module.set_metrics([model.metrics.CategoricalAccuracy(),
                          model.metrics.Regularizer())
 model_module.build()
 
-
 # execution and evaluation
 exeval_module = ClassifyExeEval(batch_size=50)
 exeval_module.set_aspects('training', 'valid', 'test')
-
 
 # task
 task = ClassificationTask()
