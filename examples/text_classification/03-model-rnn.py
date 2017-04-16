@@ -30,7 +30,7 @@ net.set_metrics(train_metrics=[model.metrics.Loss(), model.metrics.Regularizer()
 net.build()
 
 # execution and evaluation
-exeval = ClassifyExeEval(batch_size=50)
+exeval = ClassifyExeEval(batch_size=50, epochs=5)
 exeval.set_aspects('training', 'valid', 'test')
 exeval.set_cpu_metrics("micro", 'macro_f1', 'macro_acc')
 

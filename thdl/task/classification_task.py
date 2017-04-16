@@ -140,7 +140,7 @@ class ClassificationTask(AbstractTask):
         ##############################
         # Step 4: do evaluation
         ##############################
-        self.exeval.output_bests(history_name, file=self.logfile)
+        self.exeval.output_ho_bests(history_name, file=self.logfile)
         print("Used time %s" % time_format(time.time() - t0), file=self.logfile)
         self.logfile.flush()
 
