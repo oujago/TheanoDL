@@ -19,11 +19,11 @@ changing thing is just the specific operation in each operation_**. (业务流�
 Every artificial intelligence(AI) task involves four components: **Model**, **Data**, 
 **Execution** and **Evaluation**.
 
-![four classes](doc/pics/p2.PNG)
+![four classes](docs/pics/p2.PNG)
 
 The process of AI task is as follows:
 
-![process](doc/pics/p3.PNG)
+![process](docs/pics/p3.PNG)
 
 So, by extracting the unchanged process, we got our deep learning framework.
 
