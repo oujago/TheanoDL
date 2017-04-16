@@ -20,7 +20,7 @@ def divide(dividend, divisor):
     if divisor == 0.:
         return 0.
     else:
-        dividend / divisor
+        return dividend / divisor
 
 
 

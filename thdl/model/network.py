@@ -8,17 +8,17 @@ from theano import tensor
 
 from thdl.model.tensors import get_tensor
 from thdl.utils.random import set_seed
+from thdl.utils.random import get_dtype
 from .base import AbstractModel
 from .layers import Dropout
 from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
-from .metrics import Regularizer
-from .metrics import Loss
+from . import metrics
 
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
 
 
-class Model(AbstractModel):
+class Network(AbstractModel):
     def __init__(self, seed=None):
         # seed
         self.seed = seed
@@ -125,8 +125,7 @@ class Model(AbstractModel):
         regularizers = []
         for layer in self.comp_layers:
             regularizers.extend(layer.regularizers)
-        regularizer_loss = tensor.sum(regularizers)
-
+        regularizer_loss = tensor.cast(tensor.sum(regularizers), get_dtype())
         # loss
         losses = regularizer_loss + train_loss
 
@@ -141,17 +140,19 @@ class Model(AbstractModel):
             layer_updates.update(layer.updates)
 
         # model updates
-        updates = self.comp_optimizer(params, tensor.sum(losses))
+        updates = self.comp_optimizer(params, losses)
         updates.update(layer_updates)
 
         # train functions
         inputs = [self.input_tensor, self.output_tensor]
         train_outputs = [train_ys, ]
         for metric in self.train_metrics:
-            if isinstance(metric, Regularizer):
+            if isinstance(metric, metrics.Regularizer):
                 train_outputs.append(regularizer_loss)
-            elif isinstance(metric, Loss):
+            elif isinstance(metric, metrics.Loss):
                 train_outputs.append(train_loss)
+            elif isinstance(metric, metrics.TotalLoss):
+                train_outputs.append(losses)
             else:
                 train_outputs.append(metric(train_prob_ys, self.output_tensor))
         self.train_func_for_eval = function(inputs=inputs,
@@ -162,7 +163,7 @@ class Model(AbstractModel):
         inputs = [self.input_tensor, self.output_tensor]
         test_outputs = [predict_ys, ]
         for metric in self.predict_metrics:
-            if isinstance(metric, Loss):
+            if isinstance(metric, metrics.Loss):
                 test_outputs.append(predict_loss)
             else:
                 test_outputs.append(metric(predict_prob_ys, self.output_tensor))

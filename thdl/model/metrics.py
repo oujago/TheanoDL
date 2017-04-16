@@ -30,6 +30,10 @@ class Loss(Metric):
     pass
 
 
+class TotalLoss(Metric):
+    pass
+
+
 class BinaryAccuracy(Metric):
     def call(self, outputs, targets):
         return tensor.mean(tensor.eq(outputs, _round(targets)))

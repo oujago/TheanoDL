@@ -26,9 +26,13 @@ class Regularizer(ThdlObj):
         if self.l2 > 0.:
             return tensor.sum(tensor.square(param) * self.l2)
 
+        raise ValueError
+
     def to_json(self):
         config = {
             'l1': self.l1,
             "l2": self.l2
         }
         return config
+
+

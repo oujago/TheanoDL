@@ -22,6 +22,9 @@ class AbstractData(ThdlObj):
     def get_test_data(self, *args, **kwargs):
         raise NotImplementedError
 
+    def get_index_to_tag(self):
+        raise NotImplementedError
+
     def build(self):
         raise NotImplementedError
 
@@ -35,7 +38,7 @@ class Data(AbstractData):
         if shuffle_seed:
             self.shuffle_rng = np.random.RandomState(seed=shuffle_seed)
         else:
-            self.shuffle_rng = random.get_rng().randint(1000, 10000000000)
+            self.shuffle_rng = random.get_rng().randint(1000, 100000000)
 
     def to_json(self):
         config = {

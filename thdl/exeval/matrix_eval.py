@@ -7,7 +7,7 @@ import numpy as np
 from thdl.utils.math import divide
 
 
-def get_confusion_matrix(predictions, origins, y_num):
+def get_confusion_matrix(predictions, origins, y_num=None):
     """
     Get the value matrix, according to the predicted and original data.
 
@@ -15,7 +15,13 @@ def get_confusion_matrix(predictions, origins, y_num):
     :param origins:
     :param y_num:
     """
+    assert np.ndim(predictions) == 1
+    if np.ndim(origins) == 2:
+        origins = np.argmax(origins, axis=1)
+    assert np.ndim(origins) == 1
     assert predictions.shape == origins.shape
+    if y_num is None:
+        y_num = np.unique(origins).shape[0]
 
     res_matrix = np.zeros((y_num, y_num), dtype='int32')
     for i in range(len(predictions)):
@@ -60,27 +66,27 @@ def get_evaluation_matrix(confusion_matrix, beta=1):
     return res_matrix
 
 
-def print_matrix(matrix, rows, columns, file=sys.stdout):
+def print_matrix(matrix, row_names, column_names, file=sys.stdout):
     """
     Print the value matrix into the file.
     
     :param matrix:
-    :param rows:
-    :param columns:
+    :param row_names:
+    :param column_names:
     :param file:
     """
-    assert len(rows) == len(matrix) and len(columns) == len(matrix[0])
-    gap = max([len(row) for row in rows] + [len(column) for column in columns]) + 1
+    assert len(row_names) == len(matrix) and len(column_names) == len(matrix[0])
+    gap = max([len(row) for row in row_names] + [len(column) for column in column_names]) + 1
 
     # print header
     runout = ' ' * gap
-    for column in columns:
+    for column in column_names:
         runout += (" " * (gap - len(column)) + column)
     print(runout, file=file)
 
     # print each row
-    for i in range(len(rows)):
-        runout = ' ' * (gap - len(rows[i])) + rows[i]
+    for i in range(len(row_names)):
+        runout = ' ' * (gap - len(row_names[i])) + row_names[i]
         for value in matrix[i]:
             value = ("%s" % value)[:gap - 1]
             runout += (" " * (gap - len(value)) + value)

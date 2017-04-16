@@ -133,7 +133,7 @@ class Recurrent(Layer):
             returns.extend([self.U_regularizer(U) for U in U_weights])
 
         if self.b_regularizer and self.bias:
-            returns.extend([self.b_regularizer(U) for b in b_weights])
+            returns.extend([self.b_regularizer(b) for b in b_weights])
 
         return returns
 
