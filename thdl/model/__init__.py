@@ -8,5 +8,5 @@ from . import objective
 from . import optimizer
 from . import regularization
 from . import tensors
-from .network import AbstractModel
-from .network import Network
+from .base import AbstractModel
+from .base import Network

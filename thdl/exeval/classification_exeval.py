@@ -8,7 +8,7 @@ import numpy as np
 from thdl.utils.file import check_duplicate_path
 from . import matrix_eval
 from . import output
-from .base import AbstractExeEval
+from .abstract import AbstractExeEval
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
