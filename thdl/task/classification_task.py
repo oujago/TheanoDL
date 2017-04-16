@@ -51,7 +51,7 @@ class ClassificationTask(AbstractTask):
         else:
             raise ValueError("Execution already exists.")
 
-    def set_logfile(self, logfile):
+    def set_logfile(self, logfile=sys.stdout):
         self.logfile = logfile
 
     def output_config(self):
@@ -113,37 +113,26 @@ class ClassificationTask(AbstractTask):
         # Step 3: execute model
         ##############################
 
-        epoch_train_execution = self.exeval.train_execution
-        epoch_predict_execution = self.exeval.predict_execution
-
         self.exeval.dock_gpu_train_metrics(self.model.train_metrics)
         self.exeval.dock_gpu_predict_metrics(self.model.predict_metrics)
+        self.exeval.dock_index_to_tag(self.data.get_index_to_tag())
 
         for epoch in range(self.exeval.epochs):
             t1 = time.time()
 
             # training
-            outputs = epoch_train_execution(self.model, train_xs, train_ys)
-            if 'training' in self.exeval.aspects:
-                self.exeval.add_training_history(history_name, outputs)
+            self.exeval.epoch_train_execution(history_name, self.model, train_xs, train_ys)
 
             # trained
-            if 'trained' in self.exeval.aspects:
-                outputs = epoch_predict_execution(self.model, train_xs, train_ys)
-                self.exeval.add_trained_history(history_name, outputs)
+            self.exeval.epoch_predict_execution(history_name, self.model, train_xs, train_ys, 'trained')
 
             # validation
-            if 'valid' in self.exeval.aspects:
-                outputs = epoch_predict_execution(self.model, valid_xs, valid_ys)
-                self.exeval.add_validation_history(history_name, outputs)
-            else:
-                raise OSError("Model must valid.")
+            self.exeval.epoch_predict_execution(history_name, self.model, valid_xs, valid_ys, 'valid')
 
             # test
-            if 'test' in self.exeval.aspects:
-                outputs = epoch_predict_execution(self.model, test_xs, test_ys)
-                self.exeval.add_test_history(history_name, outputs)
+            self.exeval.epoch_predict_execution(history_name, self.model, test_xs, test_ys, 'test')
 
+            # output
             self.exeval.output_epoch_evaluation(history_name, epoch, file=self.logfile)
             print("Used time %s" % time_format(time.time() - t1))
             self.logfile.flush()

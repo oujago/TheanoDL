@@ -7,10 +7,10 @@ class AbstractExeEval(ThdlObj):
     batch_size = None
     epochs = None
 
-    def train_execution(self, *args, **kwargs):
+    def epoch_train_execution(self, *args, **kwargs):
         raise NotImplementedError
 
-    def predict_execution(self, *args, **kwargs):
+    def epoch_predict_execution(self, *args, **kwargs):
         raise NotImplementedError
 
     def to_json(self):
