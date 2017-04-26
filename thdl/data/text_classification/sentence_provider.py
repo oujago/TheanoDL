@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 from .sentence_getter import SentenceGetter
 from .sentence_processor import SentenceProcessor
 from ..base import Data
+from thdl.utils.common import dict_to_str
+from thdl.utils.file import pickle_dump
+from thdl.utils.file import pickle_load
 
 
 class SentenceProvider(Data):
-    def __init__(self, shuffle=True, shuffle_seed=None, index_to_tag=None):
+    def __init__(self, shuffle=True, shuffle_seed=None, index_to_tag=None, save_path=None):
         """
 
-        :param shuffle:
-        :param shuffle_seed:
-        :param index_to_tag:
+        :param save_path: If None, do not save the data into the file. Else, save the data into file.
 
         :return
             self.word_res = {
@@ -43,6 +45,8 @@ class SentenceProvider(Data):
         self.word_res = None
         self.tag_res = None
 
+        self.save_path = save_path
+
     def set_getter(self, getter):
         assert isinstance(getter, SentenceGetter)
         self.getter = getter
@@ -58,6 +62,16 @@ class SentenceProvider(Data):
         return base_config
 
     def build(self):
+        if self.save_path is None:
+            to_save_filepath = None
+
+        else:
+            save_file = "{}.pkl".format(dict_to_str(self.to_json()))
+            to_save_filepath = os.path.join(os.getcwd(), self.save_path, save_file)
+            if os.path.exists(to_save_filepath):
+                self.word_res, self.tag_res, self.index_to_tag = pickle_load(save_file)
+                return
+
         train_indices = None
         valid_indices = None
 
@@ -105,6 +119,13 @@ class SentenceProvider(Data):
             tags_res['valid'] = np.asarray([train_tags_res[i] for i in valid_indices])
         self.tag_res = tags_res
         self.index_to_tag = tags_res['index2tag']
+
+        if to_save_filepath is None:
+            return
+        else:
+            res = [self.word_res, self.tag_res, self.index_to_tag]
+            pickle_dump(res, to_save_filepath)
+            return
 
     def get_train_data(self):
         return self.word_res['train'], self.tag_res['train']

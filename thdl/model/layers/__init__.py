@@ -15,6 +15,8 @@ from .convolution import Convolution
 
 # pooling
 from .pooling import Pooling
+from .pooling import MaxPooling
+from .pooling import MeanPooling
 
 # recurrent
 from .recurrent import SimpleRNN

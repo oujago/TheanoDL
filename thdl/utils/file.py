@@ -8,6 +8,14 @@ from six.moves import cPickle as pickle
 
 
 def write_xls(contents, filepath):
+    """Write the contents into the xls tables.
+    
+    :param contents: an instance of :class:`dict` or an instance of :class:`list`
+        If `isinstance(contents, dict) == True`, there is only one line in xls table.
+        If contents is a list, then there are several lines in xls table.
+    :param filepath: :class:`str` instance
+        The path to save.
+    """
     if isinstance(contents, dict):
         wb = xlwt.Workbook()
         ws = wb.add_sheet('sheet 1')
@@ -53,8 +61,8 @@ def pickle_dump(data, path):
 
 
 def pickle_load(path):
-    """
-    From the PATH get the DATA.
+    """From the PATH get the DATA.
+    
     :param path: the path that store the pickled f_data
     """
     data = pickle.load(open(os.path.join(os.getcwd(), path), 'rb'))
@@ -62,14 +70,15 @@ def pickle_load(path):
 
 
 def check_duplicate_path(filepath):
-    """
+    """Check the duplicate path.
+    
     If there is a same filepath, for example 'file/test.txt',
     Then this path will be 'file/test(1).txt'
 
     If 'file/test(1).txt' also exists, then this path will be 'file/test(2).txt'
 
-    :param filepath:
-    :return:
+    :param filepath: the file path to save.
+    :return: the file path can be used to save path.
     """
     if not os.path.exists(os.path.join(os.getcwd(), filepath)):
         return filepath

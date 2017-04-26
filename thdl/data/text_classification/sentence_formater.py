@@ -166,7 +166,7 @@ def stanford_sentiment_treebank_phrase(file_folder, save_path):
             for sen, score in data_set.items():
                 score = float(score)
 
-                if 0 <= score <= 0.2:
+                if 0. <= score <= 0.2:
                     score_ = 'very_negative'
                 elif 0.2 < score <= 0.4:
                     score_ = 'negative'

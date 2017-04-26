@@ -6,7 +6,7 @@ from collections import Counter
 import numpy as np
 
 from thdl.utils.data_nlp_processing import yield_item
-from thdl.utils.usual import time_format
+from thdl.utils.common import time_format
 from .base import BaseTask
 
 

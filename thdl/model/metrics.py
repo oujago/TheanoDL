@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Adopted from Keras Version 1.2.1.
+Some functions are adopted from Keras Version 1.2.1.
 """
 
 from theano import tensor

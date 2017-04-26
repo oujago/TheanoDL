@@ -9,9 +9,9 @@ from nltk import word_tokenize
 from thdl.base import ThdlObj
 from thdl.utils.data_nlp_processing import get_split
 from thdl.utils.data_nlp_processing import item_list2index_list
+from thdl.utils.data_nlp_processing import one_hot
 from thdl.utils.data_nlp_processing import remove_punctuation
 from thdl.utils.data_nlp_processing import yield_item
-from thdl.utils.data_nlp_processing import one_hot
 from ..w2v import W2VGet
 
 
@@ -63,6 +63,10 @@ class SentenceGetter(ThdlObj):
         self.remove_punc = remove_punc
         self.test_from = test_from
 
+        self.folder_num = None
+        self.valid_idx = None
+        self.test_idx = None
+
     def _get_split_boundary(self, folder_num=None, valid_idx=None, test_idx=None):
         """
 
@@ -102,11 +106,15 @@ class SentenceGetter(ThdlObj):
 
         return valid_start, valid_end, test_start, test_end, sen_total_num
 
-    def get_words(self, folder_num=None, valid_idx=None, test_idx=None, ):
+    def get_words(self, folder_num=None, valid_idx=None, test_idx=None):
         """
             File format:
                 the first word is tag, next words are words, the middle is separator '\t'
         """
+        self.folder_num = folder_num
+        self.valid_idx = valid_idx
+        self.test_idx = test_idx
+
         ##############################
         # get total corpus
         ##############################
@@ -190,11 +198,15 @@ class SentenceGetter(ThdlObj):
         }
         return res
 
-    def get_tags(self, folder_num=None, test_idx=None, valid_idx=None, ):
+    def get_tags(self, folder_num=None, test_idx=None, valid_idx=None):
         """
         File format:
             the first word is tag, next words are words, the middle is separator '\t'
         """
+        self.folder_num = folder_num
+        self.valid_idx = valid_idx
+        self.test_idx = test_idx
+
         ##############################
         # get total corpus
         ##############################
@@ -252,5 +264,8 @@ class SentenceGetter(ThdlObj):
             "threshold": self.threshold,
             "remove_punctuation": self.remove_punc,
             "test_from": self.test_from,
+            "folder_num": self.folder_num,
+            "valid_idx": self.valid_idx,
+            "test_idx": self.test_idx
         }
         return config
