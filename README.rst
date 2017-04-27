@@ -1,6 +1,53 @@
-# Deep Learning Framework based on Theano
 
-## Requirements
+.. image:: https://img.shields.io/badge/license-MIT-blue.svg
+    :target: https://github.com/oujago/TheanoDL/blob/master/LICENSE.txt
+
+
+Deep Learning Library based on Theano
+=====================================
+
+Design Philosophy
+-----------------
+
+Totally speaking, in every task, **_the operation flow/process is unchanged_** and **_the only
+changing thing is just the specific operation in each operation_**. (业务流程是不变的，变化的只是
+具体的业务。)
+
+Every artificial intelligence(AI) task involves four components: **Model**, **Data**,
+**Execution** and **Evaluation**.
+
+.. four classes:
+.. figure:: docs/source/pics/p2.PNG
+
+The process of AI task is as follows:
+
+.. process:
+.. figure:: docs/source/pics/p3.PNG
+
+So, by extracting the unchanged process, we got our deep learning framework.
+
+Thdl framework contains four modules:
+
+- **data**: for processing AND providing data;
+- **model**: for building neural models;
+- **exeval**: for executing and evaluating models using provided data;
+- **task**: for building a task.
+
+Features
+--------
+
+- Support commonly used models, including convnets, RNNs and LSTMS.
+- Support visualization of evaluation results.
+
+
+Documentation
+-------------
+
+Preparing.
+
+
+Requirements
+------------
 
 - Python3
 - Theano >= 0.9
@@ -10,36 +57,11 @@
 - xlwt
 - nltk
 
-## Design Philosophy
 
-Totally speaking, in every task, **_the operation flow/process is unchanged_** and **_the only
-changing thing is just the specific operation in each operation_**. (业务流程是不变的，变化的只是
-具体的业务。)
+Example
+-------
 
-Every artificial intelligence(AI) task involves four components: **Model**, **Data**, 
-**Execution** and **Evaluation**.
-
-![four classes](docs/pics/p2.PNG)
-
-The process of AI task is as follows:
-
-![process](docs/pics/p3.PNG)
-
-So, by extracting the unchanged process, we got our deep learning framework.
-
-Thdl framework contains four modules:
- 
-- **data**: for processing AND providing data;
-- **model**: for building neural models;
-- **exeval**: for executing and evaluating models using provided data;
-- **task**: for building a task.
-
-## Features
-
-- Support commonly used models, including convnets, RNNs and LSTMS.
-- Support visualization of evaluation results.
-
-## Example
+.. code-block:: python
     
     from thdl.data import text_classification as corpus
     from thdl import model
@@ -80,9 +102,7 @@ Thdl framework contains four modules:
     task.set_model(model_module)
     task.set_data(data_module)
     task.set_exeval(exeval_module)
-    # task.set_logfile()
-    
-    # run
+    task.set_logfile("temp.log")
     task.hold_out_validation()
 
 
