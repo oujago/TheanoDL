@@ -73,7 +73,7 @@ class ClassifyExeEval(AbstractExeEval):
         >>>             "training": [],
         >>>             'trained': [],
         >>>             'valid': [],
-        >>>             'test': [],
+        >>>             'test':[,]
         >>>             'L1': [],
         >>>             'L2': []
         >>>         }

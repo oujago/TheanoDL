@@ -23,7 +23,7 @@ class SentenceProvider(Data):
                 'word2index': word2index,
                 'train': train_indices,
                 'valid': valid_indices,
-                'test': test_indices
+                'tests': test_indices
             }
             self.words_res['train'][i] represents the sentence i,
             self.words_res['train'][i][j] represents the sentence i's word j.
@@ -32,7 +32,7 @@ class SentenceProvider(Data):
                 "index2tag": index2item,
                 "tag2index": item2index,
                 'train': train_index_items,
-                'test': test_index_items,
+                'tests': test_index_items,
                 'valid': valid_index_items
             }
             each value is corresponding to the sentence's tag
@@ -79,7 +79,7 @@ class SentenceProvider(Data):
         words_res = self.getter.get_words()
 
         assert len(words_res['train']) > 0
-        assert len(words_res['test']) > 0
+        assert len(words_res['tests']) > 0
 
         if len(words_res['valid']) == 0:
             train_word_res = words_res['train']
@@ -95,7 +95,7 @@ class SentenceProvider(Data):
             words_res['train'] = [train_word_res[i] for i in train_indices]
 
         words_res['train'] = self.processor(words_res['train'])
-        words_res['test'] = self.processor(words_res['test'])
+        words_res['tests'] = self.processor(words_res['tests'])
         words_res['valid'] = self.processor(words_res['valid'])
         self.word_res = words_res
 
@@ -103,7 +103,7 @@ class SentenceProvider(Data):
         tags_res = self.getter.get_tags()
 
         assert len(tags_res['train']) > 0
-        assert len(tags_res['test']) > 0
+        assert len(tags_res['tests']) > 0
 
         if len(tags_res['valid']) == 0:
             train_tags_res = tags_res['train']
@@ -134,7 +134,7 @@ class SentenceProvider(Data):
         return self.word_res['valid'], self.tag_res['valid']
 
     def get_test_data(self):
-        return self.word_res['test'], self.tag_res['test']
+        return self.word_res['tests'], self.tag_res['tests']
 
     def get_embedding(self):
         return self.word_res['embeddings']

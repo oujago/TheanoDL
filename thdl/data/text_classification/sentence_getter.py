@@ -34,11 +34,11 @@ class SentenceGetter(ThdlObj):
 
 
         If folder_num and test_idx are all None,
-        then this is the fixed train-valid-test split.
+        then this is the fixed train-valid-tests split.
 
         'processed.data' File Format ——
             1. Each line is a sentence;
-            2. First line is test-[test_start_idx]-[test_end_idx];
+            2. First line is tests-[test_start_idx]-[test_end_idx];
             3. Second line is valid-[valid_start_idx]-[valid_end_idx];
             4. Next each line is a sentence.
             5. The first split element is the split label,
@@ -49,9 +49,9 @@ class SentenceGetter(ThdlObj):
             train	negative	It 's only in fairy tales that princesses that are married for political reason live happily ever after .
             train	very_positive	A terrific B movie -- in fact , the best in recent memory .
             train	positive	`` Birthday Girl '' is an actor 's movie first and foremost .
-            test	positive	It 's rather like a Lifetime special -- pleasant , sweet and forgettable .
-            test	positive	A moody horror\/thriller elevated by deft staging and the director 's well-known narrative gamesmanship .
-            test	very_positive	As a singular character study , it 's perfect .
+            tests	positive	It 's rather like a Lifetime special -- pleasant , sweet and forgettable .
+            tests	positive	A moody horror\/thriller elevated by deft staging and the director 's well-known narrative gamesmanship .
+            tests	very_positive	As a singular character study , it 's perfect .
 
         """
         self.data_path = os.path.join(os.getcwd(), data_path) if data_path else None
@@ -76,7 +76,7 @@ class SentenceGetter(ThdlObj):
         """
         if folder_num is None and test_idx is None and valid_idx is None:
 
-            # get train, valid, test split index
+            # get train, valid, tests split index
             sen_total_num = 0
             with open(self.data_path, encoding='utf-8') as f:
                 split, start, end = next(f).strip().split('-')
@@ -100,7 +100,7 @@ class SentenceGetter(ThdlObj):
                 for _ in f:
                     sen_total_num += 1
 
-            # get train, valid, test split index
+            # get train, valid, tests split index
             test_start, test_end = get_split(sen_total_num, folder_num, test_idx)
             valid_start, valid_end = get_split(sen_total_num, folder_num, valid_idx)
 
@@ -182,7 +182,7 @@ class SentenceGetter(ThdlObj):
         embeddings[-1] = np.zeros((self.w2v_dim,))
         embeddings = np.asarray(embeddings, dtype='float32')
 
-        # get train, test, valid index
+        # get train, tests, valid index
         train_indices = item_list2index_list(train_words, word2index)
         valid_indices = item_list2index_list(valid_words, word2index)
         test_indices = item_list2index_list(test_words, word2index)
@@ -194,7 +194,7 @@ class SentenceGetter(ThdlObj):
             'word2index': word2index,
             'train': train_indices,
             'valid': valid_indices,
-            'test': test_indices
+            'tests': test_indices
         }
         return res
 
@@ -229,7 +229,7 @@ class SentenceGetter(ThdlObj):
         # get final corpus
         ##############################
 
-        # get train or test words
+        # get train or tests words
         test_items = total_tags[test_start: test_end]
         valid_items = total_tags[valid_start: valid_end]
         train_items = total_tags[min(test_end, valid_end): max(test_start, valid_start)] + \
@@ -241,7 +241,7 @@ class SentenceGetter(ThdlObj):
         index2item = sorted(index2item)
         item2index = {item: i for i, item in enumerate(index2item)}
 
-        # get index train pos and test train pos
+        # get index train pos and tests train pos
         train_index_items = item_list2index_list(train_items, item2index)
         test_index_items = item_list2index_list(test_items, item2index)
         valid_index_items = item_list2index_list(valid_items, item2index)
@@ -250,7 +250,7 @@ class SentenceGetter(ThdlObj):
             'index2tag': index2item,
             'tag2index': item2index,
             'train': one_hot(train_index_items),
-            'test': one_hot(test_index_items),
+            'tests': one_hot(test_index_items),
             'valid': one_hot(valid_index_items)
         }
 

@@ -158,11 +158,11 @@ def stanford_sentiment_treebank_phrase(file_folder, save_path):
 
     train_len, valid_len, test_len = len(train), len(valid), len(test)
     runout = ('valid-%s-%s\n' % (train_len, train_len + valid_len))
-    runout += ('test-%s-%s\n' % (train_len, train_len + test_len + valid_len))
+    runout += ('tests-%s-%s\n' % (train_len, train_len + test_len + valid_len))
 
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:
         f.write(runout)
-        for data_set, split_name in [(train, 'train'), (valid, 'valid'), (test, 'test')]:
+        for data_set, split_name in [(train, 'train'), (valid, 'valid'), (test, 'tests')]:
             for sen, score in data_set.items():
                 score = float(score)
 
@@ -187,20 +187,20 @@ def trec_corpus(file_folder, save_path):
 
     # train data
     test_idx = 0
-    for split, path in [('test', 'TREC_10.label'), ('train', 'train_5500.label'), ]:
+    for split, path in [('tests', 'TREC_10.label'), ('train', 'train_5500.label'), ]:
         print("Processing %s corpus ..." % path)
         with open(os.path.join(os.getcwd(), file_folder, path), encoding='latin-1') as f:
             for line in f:
                 splits = line.strip().split(" ")
                 label = splits[0].split(":")[0]
                 res.append((split, label, ' '.join(splits[1:])))
-                if split == 'test':
+                if split == 'tests':
                     test_idx += 1
         print("Processing is done.")
 
     # write into file
     with open(os.path.join(os.getcwd(), save_path), 'w', encoding='utf-8') as f:
-        f.write("test-%d-%d\nvalid-%d-%d\n" % (0, test_idx, test_idx, test_idx))
+        f.write("tests-%d-%d\nvalid-%d-%d\n" % (0, test_idx, test_idx, test_idx))
         for split, label, sentence in res:
             f.write("%s\t%s\n" % (label, sentence))
 

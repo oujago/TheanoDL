@@ -37,7 +37,7 @@ class ClassificationTask(BaseTask):
         self.output_data_statistics_info('validation', valid_ys)
 
         test_xs, test_ys = self.data.get_test_data()
-        self.output_data_statistics_info('test', test_ys)
+        self.output_data_statistics_info('tests', test_ys)
 
         ##############################
         # Step 2: build model
@@ -81,8 +81,8 @@ class ClassificationTask(BaseTask):
             # validation
             self.exeval.epoch_predict_execution(history_name, self.model, valid_xs, valid_ys, 'valid')
 
-            # test
-            self.exeval.epoch_predict_execution(history_name, self.model, test_xs, test_ys, 'test')
+            # tests
+            self.exeval.epoch_predict_execution(history_name, self.model, test_xs, test_ys, 'tests')
 
             # epoch evaluation
             self.exeval.output_epoch_evaluation(history_name, epoch, file=self.logfile)

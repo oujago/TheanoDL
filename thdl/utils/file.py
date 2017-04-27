@@ -72,14 +72,15 @@ def pickle_load(path):
 def check_duplicate_path(filepath):
     """Check the duplicate path.
     
-    If there is a same filepath, for example 'file/test.txt',
-    Then this path will be 'file/test(1).txt'
+    If there is a same filepath, for example 'file/tests.txt',
+    Then this path will be 'file/tests(1).txt'
 
-    If 'file/test(1).txt' also exists, then this path will be 'file/test(2).txt'
+    If 'file/tests(1).txt' also exists, then this path will be 'file/tests(2).txt'
 
     :param filepath: the file path to save.
     :return: the file path can be used to save path.
     """
+    print(os.path.join(os.getcwd(), filepath))
     if not os.path.exists(os.path.join(os.getcwd(), filepath)):
         return filepath
 
@@ -90,3 +91,8 @@ def check_duplicate_path(filepath):
         i += 1
 
     return "%s(%d).%s" % (head, i, tail)
+
+
+if __name__ == '__main__':
+    pass
+    # print(check_duplicate_path("file.py"))

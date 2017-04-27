@@ -12,7 +12,7 @@ install_requires = [
     'matplotlib',
     'xlwt',
     'nltk',
-    'theano>=0.9',
+    'theano',
     'scipy'
 ]
 
