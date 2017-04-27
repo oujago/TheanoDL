@@ -1,0 +1,8 @@
+numpy>=1.6
+scipy>=0.16
+Theano>=0.9
+nltk
+Matplotlib
+xlwt
+numpydoc>=0.6
+sphinx>=1.5.4

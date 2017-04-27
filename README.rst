@@ -1,6 +1,6 @@
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target: https://github.com/oujago/TheanoDL/blob/master/LICENSE.txt
+    :target: https://github.com/oujago/TheanoDL/blob/master/LICENSE
 
 
 Deep Learning Library based on Theano
