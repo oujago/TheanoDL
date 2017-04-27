@@ -10,10 +10,10 @@ from six.moves import cPickle as pickle
 def write_xls(contents, filepath):
     """Write the contents into the xls tables.
     
-    :param contents: an instance of :class:`dict` or an instance of :class:`list`
+    :param contents: an instance of :class:`dict` or an instance of :class:`list`.
         If `isinstance(contents, dict) == True`, there is only one line in xls table.
         If contents is a list, then there are several lines in xls table.
-    :param filepath: :class:`str` instance
+    :param filepath: :class:`str` instance.
         The path to save.
     """
     if isinstance(contents, dict):
@@ -52,10 +52,10 @@ def write_xls(contents, filepath):
 
 
 def pickle_dump(data, path):
-    """
-    Given the DATA, then pickle it into the PATH.
-    :param data: the f_data to pickle
-    :param path: the path to store the pickled f_data
+    """Given the DATA, then pickle it into the PATH.
+    
+    :param data: the f_data to pickle.
+    :param path: the path to store the pickled f_data.
     """
     ba = os.path.dirname(os.path.join(os.getcwd(), path))
     print(ba)
