@@ -1,44 +1,28 @@
 # -*- coding: utf-8 -*-
 
-
 import numpy as np
 
-from thdl.base import ThdlObj
 from thdl.utils import random
-
-
-class AbstractData(ThdlObj):
-    index_to_tag = None
-
-    def to_json(self):
-        raise NotImplementedError
-
-    def get_train_data(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def get_valid_data(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def get_test_data(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def get_index_to_tag(self):
-        raise NotImplementedError
-
-    def build(self):
-        raise NotImplementedError
+from .abstract import AbstractData
 
 
 class Data(AbstractData):
     def __init__(self, shuffle=True, shuffle_seed=None, index_to_tag=None):
+        """
+        
+        :param shuffle: When provide the training data, 
+                        if shuffle == True, the shuffle the total training data. 
+        :param shuffle_seed: If provide, then use shuffle_seed to get numpy.random.RandomState instance.
+                            Else, randomly get the shuffle_seed
+        :param index_to_tag: instance of dict object, to provide the relationship between indexes and tags.
+        """
         self.shuffle = shuffle
         self.shuffle_seed = shuffle_seed
         self.index_to_tag = index_to_tag
 
-        if shuffle_seed:
-            self.shuffle_rng = np.random.RandomState(seed=shuffle_seed)
-        else:
-            self.shuffle_rng = random.get_rng().randint(1000, 100000000)
+        if shuffle_seed is None:
+            shuffle_seed = random.get_rng().randint(1000, 1000000)
+        self.shuffle_rng = np.random.RandomState(seed=shuffle_seed)
 
     def to_json(self):
         config = {

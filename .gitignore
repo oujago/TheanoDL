@@ -6,6 +6,7 @@ __pycache__/
 *$py.class
 .idea/
 
+*.pkl
 *.vsdx
 
 # C extensions

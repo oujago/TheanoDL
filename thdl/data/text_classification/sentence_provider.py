@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 from .sentence_getter import SentenceGetter
 from .sentence_processor import SentenceProcessor
 from ..base import Data
+from thdl.utils.common import dict_to_str
+from thdl.utils.file import pickle_dump
+from thdl.utils.file import pickle_load
 
 
 class SentenceProvider(Data):
-    def __init__(self, shuffle=True, shuffle_seed=None, index_to_tag=None):
+    def __init__(self, shuffle=True, shuffle_seed=None, index_to_tag=None, save_path=None):
         """
 
-        :param shuffle:
-        :param shuffle_seed:
-        :param index_to_tag:
+        :param save_path: If None, do not save the data into the file. Else, save the data into file.
 
         :return
             self.word_res = {
@@ -21,7 +23,7 @@ class SentenceProvider(Data):
                 'word2index': word2index,
                 'train': train_indices,
                 'valid': valid_indices,
-                'test': test_indices
+                'tests': test_indices
             }
             self.words_res['train'][i] represents the sentence i,
             self.words_res['train'][i][j] represents the sentence i's word j.
@@ -30,7 +32,7 @@ class SentenceProvider(Data):
                 "index2tag": index2item,
                 "tag2index": item2index,
                 'train': train_index_items,
-                'test': test_index_items,
+                'tests': test_index_items,
                 'valid': valid_index_items
             }
             each value is corresponding to the sentence's tag
@@ -42,6 +44,8 @@ class SentenceProvider(Data):
 
         self.word_res = None
         self.tag_res = None
+
+        self.save_path = save_path
 
     def set_getter(self, getter):
         assert isinstance(getter, SentenceGetter)
@@ -58,6 +62,16 @@ class SentenceProvider(Data):
         return base_config
 
     def build(self):
+        if self.save_path is None:
+            to_save_filepath = None
+
+        else:
+            save_file = "{}.pkl".format(dict_to_str(self.to_json()))
+            to_save_filepath = os.path.join(os.getcwd(), self.save_path, save_file)
+            if os.path.exists(to_save_filepath):
+                self.word_res, self.tag_res, self.index_to_tag = pickle_load(save_file)
+                return
+
         train_indices = None
         valid_indices = None
 
@@ -65,7 +79,7 @@ class SentenceProvider(Data):
         words_res = self.getter.get_words()
 
         assert len(words_res['train']) > 0
-        assert len(words_res['test']) > 0
+        assert len(words_res['tests']) > 0
 
         if len(words_res['valid']) == 0:
             train_word_res = words_res['train']
@@ -81,7 +95,7 @@ class SentenceProvider(Data):
             words_res['train'] = [train_word_res[i] for i in train_indices]
 
         words_res['train'] = self.processor(words_res['train'])
-        words_res['test'] = self.processor(words_res['test'])
+        words_res['tests'] = self.processor(words_res['tests'])
         words_res['valid'] = self.processor(words_res['valid'])
         self.word_res = words_res
 
@@ -89,7 +103,7 @@ class SentenceProvider(Data):
         tags_res = self.getter.get_tags()
 
         assert len(tags_res['train']) > 0
-        assert len(tags_res['test']) > 0
+        assert len(tags_res['tests']) > 0
 
         if len(tags_res['valid']) == 0:
             train_tags_res = tags_res['train']
@@ -106,6 +120,13 @@ class SentenceProvider(Data):
         self.tag_res = tags_res
         self.index_to_tag = tags_res['index2tag']
 
+        if to_save_filepath is None:
+            return
+        else:
+            res = [self.word_res, self.tag_res, self.index_to_tag]
+            pickle_dump(res, to_save_filepath)
+            return
+
     def get_train_data(self):
         return self.word_res['train'], self.tag_res['train']
 
@@ -113,7 +134,7 @@ class SentenceProvider(Data):
         return self.word_res['valid'], self.tag_res['valid']
 
     def get_test_data(self):
-        return self.word_res['test'], self.tag_res['test']
+        return self.word_res['tests'], self.tag_res['tests']
 
     def get_embedding(self):
         return self.word_res['embeddings']

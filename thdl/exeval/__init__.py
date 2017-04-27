@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .base import AbstractExeEval
+from .abstract import AbstractExeEval
 from .classification_exeval import ClassifyExeEval
 
 

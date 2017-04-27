@@ -17,10 +17,10 @@ class Pooling(Layer):
 
     def connect_to(self, pre_layer=None):
         assert pre_layer is not None
-        assert 4 >= len(pre_layer.out_shape) >= 3
+        assert 4 >= len(pre_layer.output_shape) >= 3
 
-        old_h = pre_layer.out_shape[-2] + self.pad[0]
-        old_w = pre_layer.out_shape[-1] + self.pad[1]
+        old_h = pre_layer.output_shape[-2] + self.pad[0]
+        old_w = pre_layer.output_shape[-1] + self.pad[1]
         pool_h, pool_w = self.pool_size
 
         if self.stride is None:
@@ -31,7 +31,7 @@ class Pooling(Layer):
             new_h = (old_h - pool_h + 1) // self.stride[0] + 1
             new_w = (old_w - pool_w + 1) // self.stride[1] + 1
 
-        self.out_shape = pre_layer.out_shape[:-2] + (new_h, new_w)
+        self.output_shape = pre_layer.output_shape[:-2] + (new_h, new_w)
 
     def forward(self, input, **kwargs):
         output = pool.pool_2d(input=input, ws=self.pool_size, pad=self.pad,
@@ -48,3 +48,20 @@ class Pooling(Layer):
             'stride': self.stride,
         }
         return config
+
+
+class MaxPooling(Pooling):
+    def __init__(self, pool_size, pad=(0, 0), ignore_border=True, stride=None):
+        super(MaxPooling, self).__init__(pool_size, pad, ignore_border, mode='max', stride=stride)
+
+
+class MeanPooling(Pooling):
+    def __init__(self, pool_size, pad=(0, 0), ignore_border=True, stride=None, mode='inc'):
+        if mode == 'inc':
+            super(MeanPooling, self).__init__(pool_size, pad, ignore_border, mode='average_inc_pad', stride=stride)
+
+        elif mode == 'exc':
+            super(MeanPooling, self).__init__(pool_size, pad, ignore_border, mode='average_exc_pad', stride=stride)
+
+        else:
+            raise ValueError
