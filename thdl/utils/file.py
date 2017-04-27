@@ -57,7 +57,14 @@ def pickle_dump(data, path):
     :param data: the f_data to pickle
     :param path: the path to store the pickled f_data
     """
-    pickle.dump(data, open(os.path.join(os.getcwd(), path), 'wb'))
+    ba = os.path.dirname(os.path.join(os.getcwd(), path))
+    print(ba)
+    if os.path.exists(ba):
+        print("Exist")
+    else:
+        print("Not Exist")
+
+    pickle.dump(data, open(os.path.join(os.getcwd(), path), 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def pickle_load(path):
@@ -80,7 +87,6 @@ def check_duplicate_path(filepath):
     :param filepath: the file path to save.
     :return: the file path can be used to save path.
     """
-    print(os.path.join(os.getcwd(), filepath))
     if not os.path.exists(os.path.join(os.getcwd(), filepath)):
         return filepath
 

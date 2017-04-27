@@ -3,11 +3,18 @@
 
 .. automodule:: thdl.utils
 
-.. autofunction:: floatX
-.. autofunction:: shared_empty
-.. autofunction:: as_theano_expression
-.. autofunction:: collect_shared_vars
-.. autofunction:: one_hot
-.. autofunction:: unique
-.. autofunction:: compute_norms
-.. autofunction:: create_param
+.. toctree::
+    :maxdepth: 2
+
+    utils/common
+
+
+:doc:`utils/common`
+
+.. autosummary::
+    :nosignatures:
+
+    now
+    today
+    time_format
+    dict_to_str

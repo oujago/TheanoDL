@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-import math
-import os
-
 from datetime import datetime
 
 
@@ -15,7 +12,7 @@ def now():
     >>> now()
     >>> "2017-04-26-16-44-56"
     
-    :return: :class:`str`
+    :return: :class:`str` instance.
     """
     return datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
@@ -28,13 +25,13 @@ def today():
     >>> today()
     >>> "2017-04-26"
     
-    :return: :class:`str`
+    :return: :class:`str` instance.
     """
     return datetime.now().strftime('%Y-%m-%d')
 
 
 def time_format(total_time):
-    """change the total time into the normal time format.
+    """Change the total time into the normal time format.
     
     For examples:
     
@@ -47,9 +44,9 @@ def time_format(total_time):
     >>> time_format(20.5)
     >>> "20 s 500 ms"
     
-    :param total_time: :class:`float` or :class: `str`
+    :param total_time: :class:`float` or :class:`str` instance.
         The total seconds of the time. 
-    :return: :class:`str`
+    :return: :class:`str` instance.
         The format string about time.
     """
     if total_time < 0:
@@ -74,13 +71,13 @@ def time_format(total_time):
 
 
 def dict_to_str(dict_obj, js='-'):
-    """ change dict object to string.
+    """Change dict object to string.
     
-    :param dict_obj: :class:`dict`
+    :param dict_obj: :class:`dict` instance.
         The dict object to string.
-    :param js: :class:`str`
+    :param js: :class:`str` instance.
         The join symbol of keys and values.
-    :return: :class:`str`
+    :return: :class:`str` instance.
         Return the string object.
     """
     if isinstance(dict_obj, dict):
