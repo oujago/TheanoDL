@@ -14,6 +14,7 @@ from .layers import Dropout
 from .objective import CategoricalCrossEntropy
 from .optimizer import SGD
 from . import metrics
+from thdl.utils import is_iterable
 
 TRAIN_TEST_SPLIT_LAYERS = [Dropout, ]
 
@@ -49,6 +50,11 @@ class Network(AbstractModel):
         if input_tensor:
             if isinstance(input_tensor, tensor.TensorVariable):
                 self.input_tensor = input_tensor
+            elif is_iterable(input_tensor):
+                if input_tensor[0].__class__.__name__ == 'str':
+                    self.input_tensor = [get_tensor(tensor) for tensor in input_tensor]
+                else:
+                    self.input_tensor = input_tensor
             else:
                 self.input_tensor = get_tensor(input_tensor)
         else:
@@ -144,7 +150,10 @@ class Network(AbstractModel):
         updates.update(layer_updates)
 
         # train functions
-        inputs = [self.input_tensor, self.output_tensor]
+        if is_iterable(self.input_tensor):
+            inputs = list(self.input_tensor) + [self.output_tensor]
+        else:
+            inputs = [self.input_tensor, self.output_tensor]
         train_outputs = [train_ys, ]
         for metric in self.train_metrics:
             if isinstance(metric, metrics.Regularizer):
@@ -160,7 +169,10 @@ class Network(AbstractModel):
                                             updates=updates)
 
         # test functions
-        inputs = [self.input_tensor, self.output_tensor]
+        if is_iterable(self.input_tensor):
+            inputs = list(self.input_tensor) + [self.output_tensor]
+        else:
+            inputs = [self.input_tensor, self.output_tensor]
         test_outputs = [predict_ys, ]
         for metric in self.predict_metrics:
             if isinstance(metric, metrics.Loss):

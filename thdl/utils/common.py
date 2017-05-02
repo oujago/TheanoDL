@@ -95,6 +95,20 @@ def dict_to_str(dict_obj, js='-'):
         return js.join(res)
 
 
+def is_iterable(obj):
+    """Check weather the input is an iterable object.
+    
+    :param obj: Any object.
+    :return: :class:`boolean` instance. True or False.
+    """
+
+    if obj.__class__.__name__ in ['tuple', 'list']:
+        return True
+    else:
+        return False
+
+
+
 if __name__ == '__main__':
     a = {'a': 1, "b": {'c': 3, 'd': {"e": 5}}}
     print(dict_to_str(a))

@@ -8,6 +8,7 @@ from . import file
 from . import math
 from . import random
 from .common import dict_to_str
+from .common import is_iterable
 
 # common.py
 from .common import now
