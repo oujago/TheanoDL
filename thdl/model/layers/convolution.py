@@ -51,8 +51,7 @@ class Convolution(Layer):
             self.b = _zero((self.nb_filter,))
 
     def forward(self, input, **kwargs):
-        conv_out = conv.conv2d(input=input, filters=self.W, image_shape=input.shape,
-                               filter_shape=self.W.shape, subsample=self.strides)
+        conv_out = conv.conv2d(input=input, filters=self.W, subsample=self.strides)
         if self.bias:
             conv_out += self.b.dimshuffle('x', 0, 'x', 'x')
         output = self.activation(conv_out)

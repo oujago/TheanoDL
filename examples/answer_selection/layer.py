@@ -59,7 +59,7 @@ class ASLayer(Layer):
 
     @property
     def updates(self):
-        ups = super(ASLayer, self).updates()
-        ups.update(self.q1_conv_layer)
-        ups.update(self.q2_conv_layer)
+        ups = super(ASLayer, self).updates
+        ups.update(self.q1_conv_layer.updates)
+        ups.update(self.q2_conv_layer.updates)
         return ups

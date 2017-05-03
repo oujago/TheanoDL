@@ -32,7 +32,7 @@ class Optimizer(ThdlObj):
         return self.get_updates(params, cost)
 
     def get_updates(self, params, cost):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def to_json(self):
         config = {
@@ -43,7 +43,7 @@ class Optimizer(ThdlObj):
         return config
 
     def get_grads(self, params, cost):
-        grads = tensor.grad(cost=cost, wrt=params)
+        grads = tensor.grad(cost=cost, wrt=params, disconnected_inputs='warn')
 
         if self.max_norm > 0.:
             norm = tensor.sqrt(tensor.sum([tensor.sum(g ** 2) for g in grads]))

@@ -55,7 +55,6 @@ class NLPConvPooling(Layer):
             pool = Pooling(pool_size, self.pool_pad, self.pool_ignore_border,
                                             self.pool_mode, self.pool_strides)
             self.all_poolings.append(pool)
-        # self.output_shape = (nb_batch, sum(nb_filters))
 
     def forward(self, input, **kwargs):
         outputs = []
@@ -87,13 +86,13 @@ class NLPConvPooling(Layer):
     @property
     def params(self):
         if self.bias:
-            params = ()
+            params = []
             for conv in self.all_convs:
                 params += conv.params
             return params
 
         else:
-            return (conv.params for conv in self.all_convs)
+            return [conv.params for conv in self.all_convs]
 
     @property
     def regularizers(self):
@@ -106,7 +105,7 @@ class NLPConvPooling(Layer):
 
     @property
     def updates(self):
-        ups = super(NLPConvPooling, self).updates()
+        ups = super(NLPConvPooling, self).updates
         for conv in self.all_convs:
             ups.update(conv.updates)
         for pool in self.all_poolings:

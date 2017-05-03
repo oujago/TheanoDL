@@ -33,7 +33,7 @@ class Embedding(Layer):
             else:
                 self.static = static
             self.input_size, self.n_out = input_size, n_out
-            embed_words = init((input_size, n_out), get_shared=False)
+            embed_words = init((input_size, n_out), theano_shared=False)
 
         # zero indexes
         if zero_idxs is not None:
@@ -74,6 +74,8 @@ class Embedding(Layer):
     def updates(self):
         ups = super(Embedding, self).updates()
         if self.static is False:
-            zero_mat = _zero((len(self.zero_idxs), self.n_out))
-            ups[self.embed_words] = tensor.set_subtensor(self.embed_words[self.zero_idxs], zero_mat)
+            zero_vec = _zero((self.n_out, ))
+            for idx in self.zero_idxs:
+            # zero_mat = _zero((len(self.zero_idxs), self.n_out))
+                ups[self.embed_words] = tensor.set_subtensor(self.embed_words[idx], zero_vec)
         return ups
