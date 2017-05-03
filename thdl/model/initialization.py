@@ -14,8 +14,9 @@ def shared(value, borrow=True):
 
 
 class Initializer(ThdlObj):
-    def __call__(self, size):
-        return self.call(size)
+    def __call__(self, size, get_shared=True):
+        value = self.call(size)
+        return shared(value=value) if get_shared else value
 
     def call(self, size):
         raise NotImplementedError()
@@ -26,13 +27,14 @@ class Initializer(ThdlObj):
 
 class Zero(Initializer):
     def call(self, size):
-        return shared(value=np.zeros(size, dtype=get_dtype()))
+        value=np.zeros(size, dtype=get_dtype())
+        return value
 
 
 class One(Initializer):
     def call(self, size):
         value = np.ones(size, dtype=get_dtype())
-        return shared(value)
+        return value
 
 
 class Uniform(Initializer):
@@ -42,7 +44,7 @@ class Uniform(Initializer):
     def call(self, size):
         value = get_rng().uniform(-self.scale, self.scale, size=size)
         value = value.astype(get_dtype())
-        return shared(value)
+        return value
 
     def to_json(self):
         return {'scale': self.scale}
@@ -55,13 +57,13 @@ class Normal(Initializer):
     def call(self, size):
         value = get_rng().normal(loc=0.0, scale=self.scale, size=size)
         value = value.astype(get_dtype())
-        return shared(value)
+        return value
 
     def to_json(self):
         return {'scale': self.scale}
 
 
-class LecunUniform(Uniform):
+class LecunUniform(Initializer):
     """
     Reference: LeCun 98, Efficient Backprop
         http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf
@@ -115,7 +117,7 @@ class Orthogonal(Initializer):
         u, _, v = np.linalg.svd(a, full_matrices=False)
         q = u if u.shape == flat_shape else v
         value = q.reshape(size).astype(get_dtype())
-        return shared(value)
+        return value
 
 
 def _decompose_size(size):

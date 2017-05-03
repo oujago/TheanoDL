@@ -9,13 +9,9 @@ from .pooling import Pooling
 
 
 class NLPConvPooling(Layer):
-    def __init__(self, nb_filters, filter_heights, input_shape=None,
+    def __init__(self, input_shape, nb_filters, filter_heights,
                  conv_strides=(1, 1), conv_border_mode='valid',
-                 pool_pad=(0, 0),
-                 pool_ignore_border=True,
-                 pool_mode='max',
-                 pool_strides=None,
-
+                 pool_pad=(0, 0), pool_ignore_border=True, pool_mode='max', pool_strides=None,
                  activation=ReLU(), init=GlorotUniform(),
                  W_regularizer=None, b_regularizer=None, bias=True):
         super(NLPConvPooling, self).__init__()
@@ -35,14 +31,6 @@ class NLPConvPooling(Layer):
         self.b_regularizer = b_regularizer
         self.bias = bias
 
-    def connect_to(self, pre_layer=None):
-        # input shape
-        if pre_layer is None:
-            assert self.input_shape is not None
-            input_shape = self.input_shape
-        else:
-            input_shape = pre_layer.output_shape
-
         assert len(input_shape) == 4
 
         # check
@@ -52,30 +40,28 @@ class NLPConvPooling(Layer):
         else:
             nb_filters = self.nb_filters
 
-        self.all_conv = []
-        self.all_pooling = []
+        self.all_convs = []
+        self.all_poolings = []
         for i in range(len(self.filter_heights)):
             # filter_shape = (nb_filters[i], pre_nb_filter, self.filter_heights[i], pre_width)
-            conv = Convolution(nb_filters[i], (self.filter_heights[i], pre_width),
-                                             strides=self.conv_strides, border_mode=self.conv_border_mode,
-                                             activation=self.activation, init=self.init,
-                                             W_regularizer=self.W_regularizer, b_regularizer=self.b_regularizer,
-                                             bias=self.bias)
-            conv.connect_to(pre_layer)
-            self.all_conv.append(conv)
+            conv = Convolution(input_shape, nb_filters[i], (self.filter_heights[i], pre_width),
+                             strides=self.conv_strides, border_mode=self.conv_border_mode,
+                             activation=self.activation, init=self.init,
+                             W_regularizer=self.W_regularizer, b_regularizer=self.b_regularizer,
+                             bias=self.bias)
+            self.all_convs.append(conv)
 
             pool_size = (pre_height - self.filter_heights[i] + 1, 1)
             pool = Pooling(pool_size, self.pool_pad, self.pool_ignore_border,
                                             self.pool_mode, self.pool_strides)
-            pool.connect_to(conv)
-            self.all_pooling.append(pool)
-        self.output_shape = (nb_batch, sum(nb_filters))
+            self.all_poolings.append(pool)
+        # self.output_shape = (nb_batch, sum(nb_filters))
 
     def forward(self, input, **kwargs):
         outputs = []
         for i in range(len(self.filter_heights)):
-            conv_out = self.all_conv[i].forward(input)
-            pool_out = self.all_pooling[i].forward(conv_out)
+            conv_out = self.all_convs[i].forward(input)
+            pool_out = self.all_poolings[i].forward(conv_out)
             outputs.append(pool_out.flatten(2))
         return tensor.concatenate(outputs, axis=1)
 
@@ -102,18 +88,27 @@ class NLPConvPooling(Layer):
     def params(self):
         if self.bias:
             params = ()
-            for conv in self.all_conv:
+            for conv in self.all_convs:
                 params += conv.params
             return params
 
         else:
-            return (conv.params for conv in self.all_conv)
+            return (conv.params for conv in self.all_convs)
 
     @property
     def regularizers(self):
         returns = []
 
-        for conv in self.all_conv:
+        for conv in self.all_convs:
             returns.extend(conv.regularizers)
 
         return returns
+
+    @property
+    def updates(self):
+        ups = super(NLPConvPooling, self).updates()
+        for conv in self.all_convs:
+            ups.update(conv.updates)
+        for pool in self.all_poolings:
+            ups.update(pool.updates)
+        return ups

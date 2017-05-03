@@ -27,14 +27,13 @@ class Embedding(Layer):
                 self.static = static
 
             self.input_size, self.n_out = embed_words.shape
-            self.embed_words = shared(embed_words, name='embedding_words')
         else:
             if static is None:
                 self.static = False
             else:
                 self.static = static
             self.input_size, self.n_out = input_size, n_out
-            self.embed_words = init((input_size, n_out))
+            embed_words = init((input_size, n_out), get_shared=False)
 
         # zero indexes
         if zero_idxs is not None:
@@ -42,8 +41,11 @@ class Embedding(Layer):
                 zero_idxs = [zero_idxs]
             assert is_iterable(zero_idxs)
             for idx in zero_idxs:
-                self.embed_words[idx] = 0.
+                embed_words[idx] = 0.
         self.zero_idxs = zero_idxs
+
+        self.embed_words = shared(embed_words, name='embedding_words')
+
 
     def forward(self, input, **kwargs):
         assert input.ndim == 2

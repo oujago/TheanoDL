@@ -2,30 +2,32 @@
 
 from examples.answer_selection.data import AnswerSelectionData
 from examples.answer_selection.exeval import AnswerSelectionExe
-
-from thdl.task import ClassificationTask
-from thdl import model
 from examples.answer_selection.layer import ASLayer
+from thdl import model
+from thdl.task import ClassificationTask
+
+
+batch_size = 40
+w2v_dim = 200
 
 # data
 maxlen = 30
 data = AnswerSelectionData('./f_data/query_pairs.xs.data',
                            './f_data/query_pairs.ys.data',
                            maxlen=maxlen,
-                           threshold=3,total_len=50000)
+                           threshold=3, total_len=50000)
 data.build()
-
 
 # model
 net = model.Network()
 net.set_input_tensor([model.tensors.imatrix(), model.tensors.imatrix()])
 net.add_layer(ASLayer(
-    embedding_layer=model.layers.Embedding(input_size=len(data.vocab_to_idx), n_out=200, seq_len=maxlen, static=False),
-    q1_conv_layer=model.layers.NLPConvPooling(100, (1,2,3)),
-  q2_conv_layer=model.layers.NLPConvPooling(100, (1, 2, 3))
+    embedding_layer=model.layers.Embedding(input_size=len(data.vocab_to_idx), n_out=w2v_dim, static=False, zero_idxs=(-1, -2)),
+    q1_conv_layer=model.layers.NLPConvPooling((batch_size, 1, maxlen, w2v_dim), 100, (1, 2, 3)),
+    q2_conv_layer=model.layers.NLPConvPooling((batch_size, 1, maxlen, w2v_dim), 100, (1, 2, 3))
 ))
 net.add_layer(model.layers.Dropout(0.5))
-net.add_layer(model.layers.Softmax(n_out=len(data.get_index_to_tag())))
+net.add_layer(model.layers.Softmax(n_in=600, n_out=len(data.get_index_to_tag())))
 net.set_output_tensor(model.tensors.fmatrix())
 net.set_objective(model.objective.CategoricalCrossEntropy())
 net.set_optimizer(model.optimizer.Adam(learning_rate=0.001))
@@ -44,4 +46,3 @@ task.set_data(data)
 task.set_exeval(exeval)
 task.set_logfile()
 task.hold_out_validation()
-

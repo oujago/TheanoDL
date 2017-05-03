@@ -10,32 +10,25 @@ class ASLayer(Layer):
     def __init__(self, embedding_layer=None, q1_conv_layer=None, q2_conv_layer=None):
         self.embedding_layer = embedding_layer
         self.q1_conv_layer = q1_conv_layer
-        self.q1_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
         self.q2_conv_layer = q2_conv_layer
+        self.q1_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
         self.q2_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
 
-    def add_embedding_layer(self, embedding_layer):
-        self.embedding_layer = embedding_layer
-
-    def add_conv_layers(self, q1_conv_layer, q2_conv_layer):
-        self.q1_conv_layer = q1_conv_layer
-        self.q2_conv_layer = q2_conv_layer
-
-    def connect_to(self, pre_layer=None):
-        # connect to
-        self.embedding_layer.connect_to(pre_layer)
-
-        self.q1_dimshufle.connect_to(self.embedding_layer)
-        self.q2_dimshufle.connect_to(self.embedding_layer)
-
-        self.q1_conv_layer.connect_to(self.q1_dimshufle)
-        self.q2_conv_layer.connect_to(self.q2_dimshufle)
-
-        # output shape
-        assert self.q1_conv_layer.output_shape[0] == self.q2_conv_layer.output_shape[0]
-        nb_batch = self.q1_conv_layer.output_shape[0]
-        length = self.q1_conv_layer.output_shape[1] + self.q2_conv_layer.output_shape[1]
-        self.output_shape = (nb_batch, length)
+    # def connect_to(self, pre_layer=None):
+    #     # connect to
+    #     self.embedding_layer.connect_to(pre_layer)
+    #
+    #     self.q1_dimshufle.connect_to(self.embedding_layer)
+    #     self.q2_dimshufle.connect_to(self.embedding_layer)
+    #
+    #     self.q1_conv_layer.connect_to(self.q1_dimshufle)
+    #     self.q2_conv_layer.connect_to(self.q2_dimshufle)
+    #
+    #     # output shape
+    #     assert self.q1_conv_layer.output_shape[0] == self.q2_conv_layer.output_shape[0]
+    #     nb_batch = self.q1_conv_layer.output_shape[0]
+    #     length = self.q1_conv_layer.output_shape[1] + self.q2_conv_layer.output_shape[1]
+    #     self.output_shape = (nb_batch, length)
 
     def forward(self, inputs, **kwargs):
         q1_embed = self.embedding_layer.forward(inputs[0])
@@ -63,3 +56,10 @@ class ASLayer(Layer):
     @property
     def regularizers(self):
         return self.embedding_layer.regularizers + self.q1_conv_layer.regularizers + self.q2_conv_layer.regularizers
+
+    @property
+    def updates(self):
+        ups = super(ASLayer, self).updates()
+        ups.update(self.q1_conv_layer)
+        ups.update(self.q2_conv_layer)
+        return ups
