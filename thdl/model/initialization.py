@@ -9,16 +9,12 @@ from thdl.utils.random import get_dtype
 from thdl.utils.random import get_rng
 
 
-def shared(value, borrow=True):
-    return theano.shared(value=value, borrow=borrow)
-
-
 class Initializer(ThdlObj):
-    def __call__(self, size, get_shared=True):
-        value = self.call(size)
-        return shared(value=value) if get_shared else value
+    def __call__(self, size, theano_shared=True):
+        value = self.sample(size)
+        return theano.shared(value=value, borrow=True) if theano_shared else value
 
-    def call(self, size):
+    def sample(self, size):
         raise NotImplementedError()
 
     def to_json(self):
@@ -26,13 +22,13 @@ class Initializer(ThdlObj):
 
 
 class Zero(Initializer):
-    def call(self, size):
+    def sample(self, size):
         value=np.zeros(size, dtype=get_dtype())
         return value
 
 
 class One(Initializer):
-    def call(self, size):
+    def sample(self, size):
         value = np.ones(size, dtype=get_dtype())
         return value
 
@@ -41,7 +37,7 @@ class Uniform(Initializer):
     def __init__(self, scale=0.05):
         self.scale = scale
 
-    def call(self, size):
+    def sample(self, size):
         value = get_rng().uniform(-self.scale, self.scale, size=size)
         value = value.astype(get_dtype())
         return value
@@ -54,7 +50,7 @@ class Normal(Initializer):
     def __init__(self, scale=0.05):
         self.scale = scale
 
-    def call(self, size):
+    def sample(self, size):
         value = get_rng().normal(loc=0.0, scale=self.scale, size=size)
         value = value.astype(get_dtype())
         return value
@@ -69,9 +65,9 @@ class LecunUniform(Initializer):
         http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf
     """
 
-    def call(self, size):
+    def sample(self, size):
         fan_in, fan_out = _decompose_size(size)
-        return Uniform(np.sqrt(3. / fan_in))(size)
+        return Uniform(np.sqrt(3. / fan_in)).sample(size)
 
 
 class GlorotUniform(Initializer):
@@ -79,21 +75,21 @@ class GlorotUniform(Initializer):
     Reference: Glorot & Bengio, AISTATS 2010
     """
 
-    def call(self, size):
+    def sample(self, size):
         fan_in, fan_out = _decompose_size(size)
-        return Uniform(np.sqrt(6 / (fan_in + fan_out)))(size)
+        return Uniform(np.sqrt(6 / (fan_in + fan_out))).sample(size)
 
 
 class GlorotNormal(Initializer):
-    def call(self, size):
+    def sample(self, size):
         fan_in, fan_out = _decompose_size(size)
-        return Normal(np.sqrt(2 / (fan_out + fan_in)))(size)
+        return Normal(np.sqrt(2 / (fan_out + fan_in))).sample(size)
 
 
 class HeNormal(Initializer):
-    def call(self, size):
+    def sample(self, size):
         fan_in, fan_out = _decompose_size(size)
-        return Normal(np.sqrt(2. / fan_in))(size)
+        return Normal(np.sqrt(2. / fan_in)).sample(size)
 
 
 class HeUniform(Initializer):
@@ -101,9 +97,9 @@ class HeUniform(Initializer):
     Reference:  He et al., http://arxiv.org/abs/1502.01852
     """
 
-    def call(self, size):
+    def sample(self, size):
         fan_in, fan_out = _decompose_size(size)
-        return Uniform(np.sqrt(6. / fan_in))(size)
+        return Uniform(np.sqrt(6. / fan_in)).sample(size)
 
 
 class Orthogonal(Initializer):
@@ -111,7 +107,7 @@ class Orthogonal(Initializer):
     From Lasagne. Reference: Saxe et al., http://arxiv.org/abs/1312.6120
     """
 
-    def call(self, size):
+    def sample(self, size):
         flat_shape = (size[0], np.prod(size[1:]))
         a = get_rng().normal(loc=0., scale=1., size=flat_shape)
         u, _, v = np.linalg.svd(a, full_matrices=False)
