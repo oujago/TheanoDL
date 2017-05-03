@@ -9,11 +9,25 @@ from ..initialization import _zero
 
 
 class Convolution(Layer):
-    def __init__(self, nb_filter, filter_size, input_shape=None, strides=(1, 1),
+    def __init__(self, input_shape, nb_filter, filter_size, strides=(1, 1),
                  border_mode='valid', activation=ReLU(), init=GlorotUniform(),
                  W_regularizer=None, b_regularizer=None, bias=True):
+        """
+        
+        :param input_shape: (number of filters, num input feature maps, filter height, filter width)
+        :param nb_filter: 
+        :param filter_size: 
+        :param strides: 
+        :param border_mode: 
+        :param activation: 
+        :param init: 
+        :param W_regularizer: 
+        :param b_regularizer: 
+        :param bias: 
+        """
         super(Convolution, self).__init__()
 
+        # parameters
         self.nb_filter = nb_filter
         self.filter_size = filter_size
         self.input_shape = input_shape
@@ -25,24 +39,11 @@ class Convolution(Layer):
         self.b_regularizer = b_regularizer
         self.bias = bias
 
-    def connect_to(self, pre_layer=None):
-        if pre_layer is None:
-            assert self.input_shape is not None
-            input_shape = self.input_shape
-        else:
-            input_shape = pre_layer.out_shape
-
         # input_shape: (batch size, num input feature maps, image height, image width)
         assert len(input_shape) == 4
 
         nb_batch, pre_nb_filter, pre_height, pre_width = input_shape
         filter_height, filter_width = self.filter_size
-
-        height = (pre_height - filter_height) // self.strides[0] + 1
-        width = (pre_width - filter_width) // self.strides[1] + 1
-
-        # output shape
-        self.out_shape = (nb_batch, self.nb_filter, height, width)
 
         # filters
         self.W = self.init((self.nb_filter, pre_nb_filter, filter_height, filter_width))
@@ -76,9 +77,9 @@ class Convolution(Layer):
     @property
     def params(self):
         if self.bias:
-            return self.W, self.b
+            return [self.W, self.b]
         else:
-            return self.W
+            return [self.W, ]
 
     @property
     def regularizers(self):

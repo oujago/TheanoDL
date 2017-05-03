@@ -8,23 +8,24 @@ from thdl import model
 from examples.answer_selection.layer import ASLayer
 
 # data
-maxlen = 50
+maxlen = 30
 data = AnswerSelectionData('./f_data/query_pairs.xs.data',
                            './f_data/query_pairs.ys.data',
-                           maxlen=50,
-                           threshold=3,)
+                           maxlen=maxlen,
+                           threshold=3,total_len=50000)
 data.build()
 
 
 # model
 net = model.Network()
-net.set_input_tensor(model.tensors.imatrix(), model.tensors.imatrix())
+net.set_input_tensor([model.tensors.imatrix(), model.tensors.imatrix()])
 net.add_layer(ASLayer(
     embedding_layer=model.layers.Embedding(input_size=len(data.vocab_to_idx), n_out=200, seq_len=maxlen, static=False),
-    q1_conv_layer=model.layers.NLPConvPooling(100, (1,2,3))
+    q1_conv_layer=model.layers.NLPConvPooling(100, (1,2,3)),
+  q2_conv_layer=model.layers.NLPConvPooling(100, (1, 2, 3))
 ))
 net.add_layer(model.layers.Dropout(0.5))
-net.add_layer(model.layers.Softmax(n_out=len(data.index_to_tag)))
+net.add_layer(model.layers.Softmax(n_out=len(data.get_index_to_tag())))
 net.set_output_tensor(model.tensors.fmatrix())
 net.set_objective(model.objective.CategoricalCrossEntropy())
 net.set_optimizer(model.optimizer.Adam(learning_rate=0.001))

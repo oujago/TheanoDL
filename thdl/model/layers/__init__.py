@@ -7,11 +7,9 @@ from .abstract import AbstractLayer
 from .base import Layer
 
 # basic
-from .basic import Dense
-from .basic import Softmax
+from .core import Dense
+from .core import Softmax
 
-# bidirectional
-from .bidirectional import Bidirectional
 
 # convolution
 from .convolution import Convolution
@@ -44,5 +42,6 @@ from .shape import Mean
 from .shape import Dimshuffle
 
 # wrapper
+from .wrapper import Bidirectional
 from .wrapper import MultiInput
 

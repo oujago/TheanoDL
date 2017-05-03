@@ -11,7 +11,7 @@ from ..initialization import _zero
 
 
 class Dense(Layer):
-    def __init__(self, n_out, n_in=None, activation=Tanh(), init=GlorotUniform(),
+    def __init__(self, n_in, n_out, activation=Tanh(), init=GlorotUniform(),
                  W_regularizer=None, b_regularizer=None, bias=None):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
@@ -36,14 +36,6 @@ class Dense(Layer):
         self.b_regularizer = b_regularizer
         self.bias = bias
 
-    def connect_to(self, pre_layer=None):
-        if pre_layer is None:
-            assert self.n_in
-            n_in = self.n_in
-        else:
-            n_in = pre_layer.output_shape[-1]
-
-        self.output_shape = (None, self.n_out)
         self.W = self.init((n_in, self.n_out))
         if self.bias:
             self.b = _zero((self.n_out,))
@@ -68,9 +60,9 @@ class Dense(Layer):
     @property
     def params(self):
         if self.bias:
-            return self.W, self.b
+            return [self.W, self.b]
         else:
-            return self.W
+            return [self.W, ]
 
     @property
     def regularizers(self):
@@ -86,7 +78,11 @@ class Dense(Layer):
 
 
 class Softmax(Dense):
-    def __init__(self, n_out, n_in=None, init=GlorotUniform(), W_regularizer=None, b_regularizer=None, bias=True):
-        super(Softmax, self).__init__(n_out, n_in, activation=SoftmaxAct(), init=init, W_regularizer=W_regularizer,
-                                      b_regularizer=b_regularizer, bias=bias)
+    def __init__(self, n_in, n_out, init=GlorotUniform(), W_regularizer=None, b_regularizer=None, bias=True):
+        super(Softmax, self).__init__(n_in, n_out,
+                                      activation=SoftmaxAct(),
+                                      init=init,
+                                      W_regularizer=W_regularizer,
+                                      b_regularizer=b_regularizer,
+                                      bias=bias)
 

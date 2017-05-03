@@ -39,7 +39,7 @@ class Data(AbstractData):
 
     def shuffle_data(self, xs, ys):
         if self.shuffle:
-            s = self.shuffle_rng.randint(1000, 9999999999)
+            s = self.shuffle_rng.randint(1000, 100000000)
             np.random.seed(s)  # definitely important
             np.random.shuffle(xs)
             np.random.seed(s)  # definitely important

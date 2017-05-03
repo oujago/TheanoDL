@@ -41,14 +41,14 @@ class NLPConvPooling(Layer):
             assert self.input_shape is not None
             input_shape = self.input_shape
         else:
-            input_shape = pre_layer.out_shape
+            input_shape = pre_layer.output_shape
 
         assert len(input_shape) == 4
 
         # check
         nb_batch, pre_nb_filter, pre_height, pre_width = input_shape
         if self.nb_filters.__class__.__name__ == 'int':
-            nb_filters = [self.nb_filters for _ in range(self.filter_heights)]
+            nb_filters = [self.nb_filters for _ in self.filter_heights]
         else:
             nb_filters = self.nb_filters
 
@@ -67,15 +67,15 @@ class NLPConvPooling(Layer):
             pool_size = (pre_height - self.filter_heights[i] + 1, 1)
             pool = Pooling(pool_size, self.pool_pad, self.pool_ignore_border,
                                             self.pool_mode, self.pool_strides)
-            pool.connect_to(pre_layer)
+            pool.connect_to(conv)
             self.all_pooling.append(pool)
         self.output_shape = (nb_batch, sum(nb_filters))
 
     def forward(self, input, **kwargs):
         outputs = []
         for i in range(len(self.filter_heights)):
-            conv_out = self.all_conv[i](input)
-            pool_out = self.all_pooling[i](conv_out)
+            conv_out = self.all_conv[i].forward(input)
+            pool_out = self.all_pooling[i].forward(conv_out)
             outputs.append(pool_out.flatten(2))
         return tensor.concatenate(outputs, axis=1)
 

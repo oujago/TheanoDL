@@ -30,6 +30,13 @@ class Network(BaseNetwork):
         if input_tensor:
             if isinstance(input_tensor, tensor.TensorVariable):
                 self.input_tensor = input_tensor
+
+            elif is_iterable(input_tensor):
+                if isinstance(input_tensor[0], tensor.TensorVariable):
+                    self.input_tensor = input_tensor
+                else:
+                    self.input_tensor = [get_tensor(t) for t in input_tensor]
+
             else:
                 self.input_tensor = get_tensor(input_tensor)
         else:
@@ -168,6 +175,3 @@ class MultiInNetwork(Network):
             self.input_tensors = input_tensors[0]
         else:
             self.input_tensors = input_tensors
-
-
-

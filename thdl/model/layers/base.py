@@ -2,13 +2,10 @@
 
 
 from .abstract import AbstractLayer
+from collections import OrderedDict
 
 
 class Layer(AbstractLayer):
-    output_shape = None
-
-    def connect_to(self, pre_layer=None):
-        raise NotImplementedError
 
     def forward(self, input, **kwargs):
         raise NotImplementedError
@@ -26,4 +23,4 @@ class Layer(AbstractLayer):
 
     @property
     def updates(self):
-        return []
+        return OrderedDict()

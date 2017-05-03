@@ -15,7 +15,7 @@ _ZERO = 'ZERO_VOCAB'
 
 class AnswerSelectionData(Data):
     def __init__(self, xs_path, ys_path, maxlen, vocab_path=None, threshold=None,
-                 valid_split=0.1, test_split=0.1,
+                 valid_split=0.1, test_split=0.1, total_len = -1,
                  **kwargs):
         super(AnswerSelectionData, self).__init__(**kwargs)
 
@@ -26,6 +26,7 @@ class AnswerSelectionData(Data):
         self.threshold = threshold
         self.valid_split = valid_split
         self.test_split = test_split
+        self.total_len = total_len
 
     def to_json(self):
         config = {
@@ -40,6 +41,7 @@ class AnswerSelectionData(Data):
     def build(self):
         # load vocabulary
         if self.vocab_path is None:
+            print("Building vocabulary ...")
             vocab_path = './f_data/vocab_thre-{}.pkl'.format(self.threshold)
 
             if os.path.exists(vocab_path):
@@ -65,7 +67,9 @@ class AnswerSelectionData(Data):
             with open(os.path.join(os.getcwd(), self.vocab_path), 'rb') as fin:
                 self.idx_to_vocab, self.vocab_to_idx = pickle.load(fin)
 
-        pkl_path = "./f_data/thre-{}-valid-{}-test-{}.pkl".format(self.threshold, self.valid_split, self.test_split)
+        pkl_path = "./f_data/thre-{}-valid-{}-test-{}-total-{}.pkl".format(
+            self.threshold, self.valid_split, self.test_split, self.total_len)
+        print("Building data ...")
 
         if os.path.exists(pkl_path):
             with open(pkl_path, 'rb') as fin:
@@ -85,6 +89,9 @@ class AnswerSelectionData(Data):
                         sen_idxs = []
                         for word in sentence.split():
                             sen_idxs.append(self.vocab_to_idx.get(word, -2))
+
+                        if len(sen_idxs) == 0:
+                            raise ValueError
                         if len(sen_idxs) > self.maxlen:
                             sen_idxs = sen_idxs[:self.maxlen]
                         else:
@@ -93,15 +100,18 @@ class AnswerSelectionData(Data):
                         pair_idxs.append(sen_idxs)
                     all_xs.append(pair_idxs)
 
-                    # i += 1
-                    # if i == 100:
-                    #     self.all_xs = np.asarray(all_xs)
+                    i += 1
+                    if i == self.total_len:
+                        break
 
-            self.all_xs = np.asarray(self.all_xs, dtype='int32')
+            self.all_xs = np.asarray(all_xs, dtype='int32')
 
             # load ys
             with open(os.path.join(os.getcwd(), self.ys_path), 'rb') as fin:
                 idx_all_ys = np.asarray(pickle.load(fin), dtype='int32')
+                if self.total_len > 0:
+                    idx_all_ys = idx_all_ys[:self.total_len]
+
             self.all_ys = np.zeros((idx_all_ys.shape[0], 2))
             for i in range(2):
                 self.all_ys[idx_all_ys == i, i] = 1
@@ -125,6 +135,7 @@ class AnswerSelectionData(Data):
                                  self._valid_start, self._valid_end,
                                  self._test_start, self._test_end]
                 pickle.dump(dump_contents, fin)
+        self.index_to_tag = self.get_index_to_tag()
 
     def get_index_to_tag(self):
         return "Different", "Similar"

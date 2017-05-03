@@ -15,24 +15,6 @@ class Pooling(Layer):
         self.mode = mode
         self.stride = stride
 
-    def connect_to(self, pre_layer=None):
-        assert pre_layer is not None
-        assert 4 >= len(pre_layer.output_shape) >= 3
-
-        old_h = pre_layer.output_shape[-2] + self.pad[0]
-        old_w = pre_layer.output_shape[-1] + self.pad[1]
-        pool_h, pool_w = self.pool_size
-
-        if self.stride is None:
-            new_h = old_h // pool_h
-            new_w = old_w // pool_w
-            assert old_h % pool_h == old_w % pool_w == 0
-        else:
-            new_h = (old_h - pool_h + 1) // self.stride[0] + 1
-            new_w = (old_w - pool_w + 1) // self.stride[1] + 1
-
-        self.output_shape = pre_layer.output_shape[:-2] + (new_h, new_w)
-
     def forward(self, input, **kwargs):
         output = pool.pool_2d(input=input, ws=self.pool_size, pad=self.pad,
                               ignore_border=self.ignore_border, mode=self.mode,
@@ -51,17 +33,17 @@ class Pooling(Layer):
 
 
 class MaxPooling(Pooling):
-    def __init__(self, pool_size, pad=(0, 0), ignore_border=True, stride=None):
-        super(MaxPooling, self).__init__(pool_size, pad, ignore_border, mode='max', stride=stride)
+    def __init__(self, pool_size, **kwargs):
+        super(MaxPooling, self).__init__(pool_size, **kwargs)
 
 
 class MeanPooling(Pooling):
-    def __init__(self, pool_size, pad=(0, 0), ignore_border=True, stride=None, mode='inc'):
+    def __init__(self, pool_size, mode='inc', **kwargs):
         if mode == 'inc':
-            super(MeanPooling, self).__init__(pool_size, pad, ignore_border, mode='average_inc_pad', stride=stride)
+            super(MeanPooling, self).__init__(pool_size, mode='average_inc_pad', **kwargs)
 
         elif mode == 'exc':
-            super(MeanPooling, self).__init__(pool_size, pad, ignore_border, mode='average_exc_pad', stride=stride)
+            super(MeanPooling, self).__init__(pool_size, mode='average_exc_pad', **kwargs)
 
         else:
             raise ValueError
