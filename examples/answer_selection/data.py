@@ -40,60 +40,91 @@ class AnswerSelectionData(Data):
     def build(self):
         # load vocabulary
         if self.vocab_path is None:
-            threshold = 1 if self.threshold is None else self.threshold
+            vocab_path = './f_data/vocab_thre-{}.pkl'.format(self.threshold)
 
-            freq_vocab = {}
-            with open(os.path.join(os.getcwd(), self.xs_path), encoding='utf-8') as fin:
-                for line in fin:
-                    sentences = line.strip().split()
-                    for word in sentences:
-                        freq_vocab[word] = freq_vocab.get(word, 0) + 1
-            sorted_vocab = [word for word, freq in sorted(freq_vocab.items()) if freq >= threshold]
-            sorted_vocab.append(_UNKNOWN)
-            sorted_vocab.append(_ZERO)
-            self.idx_to_vocab = {i: vocab for i, vocab in enumerate(sorted_vocab)}
-            self.vocab_to_idx = {vocab: i for i, vocab in enumerate(sorted_vocab)}
+            if os.path.exists(vocab_path):
+                with open(vocab_path, 'rb') as fin:
+                    self.idx_to_vocab, self.vocab_to_idx = pickle.load(fin)
+            else:
+                threshold = 1 if self.threshold is None else self.threshold
+
+                freq_vocab = {}
+                with open(os.path.join(os.getcwd(), self.xs_path), encoding='utf-8') as fin:
+                    for line in fin:
+                        sentences = line.strip().split()
+                        for word in sentences:
+                            freq_vocab[word] = freq_vocab.get(word, 0) + 1
+                sorted_vocab = [word for word, freq in sorted(freq_vocab.items()) if freq >= threshold]
+                sorted_vocab.append(_UNKNOWN)
+                sorted_vocab.append(_ZERO)
+                self.idx_to_vocab = {i: vocab for i, vocab in enumerate(sorted_vocab)}
+                self.vocab_to_idx = {vocab: i for i, vocab in enumerate(sorted_vocab)}
+                with open(vocab_path, 'wb') as fin:
+                    pickle.dump([self.idx_to_vocab, self.vocab_to_idx], fin)
         else:
             with open(os.path.join(os.getcwd(), self.vocab_path), 'rb') as fin:
                 self.idx_to_vocab, self.vocab_to_idx = pickle.load(fin)
 
-        # load xs in index
-        self.all_xs = []
-        with open(os.path.join(os.getcwd(), self.xs_path), encoding='utf-8') as fin:
-            for line in fin:
-                sentences = line.strip().split("\t")
+        pkl_path = "./f_data/thre-{}-valid-{}-test-{}.pkl".format(self.threshold, self.valid_split, self.test_split)
 
-                pair_idxs = []
-                for sentence in sentences:
-                    sen_idxs = []
-                    for word in sentence:
-                        sen_idxs.append(self.vocab_to_idx.get(word, -2))
-                    if len(sen_idxs) > self.maxlen:
-                        pair_idxs.append(sen_idxs[:self.maxlen])
-                    else:
-                        pair_idxs.append([-1] * (self.maxlen - len(sen_idxs)) + sen_idxs)
+        if os.path.exists(pkl_path):
+            with open(pkl_path, 'rb') as fin:
+                self.all_xs, self.all_xs, \
+                self._train_start, self._train_end, \
+                self._valid_start, self._valid_end, \
+                self._test_start, self._test_end = pickle.load(fin)
+        else:
+            # load xs in index
+            all_xs = []
+            with open(os.path.join(os.getcwd(), self.xs_path), encoding='utf-8') as fin:
+                i = 0
+                for line in fin:
+                    sentences = line.strip().split("\t")
+                    pair_idxs = []
+                    for sentence in sentences:
+                        sen_idxs = []
+                        for word in sentence.split():
+                            sen_idxs.append(self.vocab_to_idx.get(word, -2))
+                        if len(sen_idxs) > self.maxlen:
+                            sen_idxs = sen_idxs[:self.maxlen]
+                        else:
+                            sen_idxs = [-1] * (self.maxlen - len(sen_idxs)) + sen_idxs
+                        assert len(sen_idxs) == self.maxlen
+                        pair_idxs.append(sen_idxs)
+                    all_xs.append(pair_idxs)
 
-                self.all_xs.append(pair_idxs)
-        self.all_xs = np.array(self.all_xs, dtype='int32')
+                    # i += 1
+                    # if i == 100:
+                    #     self.all_xs = np.asarray(all_xs)
 
-        # load ys
-        with open(os.path.join(os.getcwd(), self.ys_path), 'rb') as fin:
-            idx_all_ys = np.asarray(pickle.load(fin), dtype='int32')
-        self.all_ys = np.zeros((idx_all_ys.shape[0], 2))
-        for i in range(2):
-            self.all_ys[idx_all_ys == i, i] = 1
+            self.all_xs = np.asarray(self.all_xs, dtype='int32')
 
-        # shuffle data
-        self.shuffle_data(self.all_xs, self.all_ys)
+            # load ys
+            with open(os.path.join(os.getcwd(), self.ys_path), 'rb') as fin:
+                idx_all_ys = np.asarray(pickle.load(fin), dtype='int32')
+            self.all_ys = np.zeros((idx_all_ys.shape[0], 2))
+            for i in range(2):
+                self.all_ys[idx_all_ys == i, i] = 1
 
-        # the start and end of the valid and test splits
-        total_len = idx_all_ys.shape[0]
-        valid_len = total_len * self.valid_split
-        test_len = total_len * self.test_split
-        train_len = total_len - valid_len - test_len
-        self._train_start, self._train_end = 0, train_len
-        self._valid_start, self._valid_end = train_len, train_len + valid_len
-        self._test_start, self._test_end = train_len + valid_len, train_len + valid_len + test_len
+            # shuffle data
+            self.shuffle_data(self.all_xs, self.all_ys)
+
+            # the start and end of the valid and test splits
+            total_len = idx_all_ys.shape[0]
+            valid_len = total_len * self.valid_split
+            test_len = total_len * self.test_split
+            train_len = total_len - valid_len - test_len
+            self._train_start, self._train_end = 0, train_len
+            self._valid_start, self._valid_end = train_len, train_len + valid_len
+            self._test_start, self._test_end = train_len + valid_len, train_len + valid_len + test_len
+
+            # pickle
+            with open(pkl_path, 'wb') as fin:
+                dump_contents = [self.all_xs, self.all_xs,
+                                 self._train_start, self._train_end,
+                                 self._valid_start, self._valid_end,
+                                 self._test_start, self._test_end]
+                pickle.dump(dump_contents, fin)
 
     def get_index_to_tag(self):
         return "Different", "Similar"

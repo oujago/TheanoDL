@@ -69,6 +69,7 @@ class NLPConvPooling(Layer):
                                             self.pool_mode, self.pool_strides)
             pool.connect_to(pre_layer)
             self.all_pooling.append(pool)
+        self.output_shape = (nb_batch, sum(nb_filters))
 
     def forward(self, input, **kwargs):
         outputs = []

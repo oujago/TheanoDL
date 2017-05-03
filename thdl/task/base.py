@@ -4,7 +4,7 @@ import sys
 
 from thdl.data import AbstractData
 from thdl.exeval import AbstractExeEval
-from thdl.model import AbstractModel
+from thdl.model import AbstractNetwork
 from .abstract import AbstractTask
 
 
@@ -21,7 +21,7 @@ class BaseTask(AbstractTask):
     def set_model(self, model):
         if model is None:
             return
-        assert isinstance(model, AbstractModel)
+        assert isinstance(model, AbstractNetwork)
         if self.model is None:
             self.model = model
         else:
