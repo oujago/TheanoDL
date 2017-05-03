@@ -7,6 +7,12 @@ from collections import OrderedDict
 
 class Layer(AbstractLayer):
 
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
+
+    def __str__(self):
+        return self.__class__.__name__
+
     def forward(self, input, **kwargs):
         raise NotImplementedError
 

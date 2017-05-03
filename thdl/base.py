@@ -2,8 +2,11 @@
 
 
 class ThdlObj(object):
-    def to_json(self, *args, **kwargs):
+    def to_json(self):
         raise NotImplementedError
+
+    def __str__(self):
+        return self.__class__.__name__
 
     @classmethod
     def from_json(cls, config=None):

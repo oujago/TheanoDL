@@ -6,7 +6,10 @@ from thdl.base import ThdlObj
 
 class AbstractLayer(ThdlObj):
     def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
+        raise NotImplementedError
+
+    def __str__(self):
+        raise NotImplementedError
 
     def forward(self, input, **kwargs):
         raise NotImplementedError
@@ -25,3 +28,6 @@ class AbstractLayer(ThdlObj):
     @property
     def updates(self):
         raise NotImplementedError
+
+
+
