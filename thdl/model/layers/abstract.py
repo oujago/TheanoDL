@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
 
 
-from .abstract import AbstractLayer
+from thdl.base import ThdlObj
 
 
-class Layer(AbstractLayer):
+class AbstractLayer(ThdlObj):
     output_shape = None
 
     def connect_to(self, pre_layer=None):

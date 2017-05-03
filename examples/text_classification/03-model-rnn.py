@@ -32,7 +32,7 @@ net.build()
 
 # execution and evaluation
 exeval = ClassifyExeEval(batch_size=50, epochs=50)
-exeval.set_aspects('training', 'valid', 'tests')
+exeval.set_aspects('training', 'valid', 'test')
 exeval.set_cpu_metrics("micro", 'macro_f1', 'macro_acc')
 
 # task

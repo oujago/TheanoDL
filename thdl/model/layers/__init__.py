@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# abstract
+from .abstract import AbstractLayer
+
 # base
 from .base import Layer
 
@@ -7,11 +10,18 @@ from .base import Layer
 from .basic import Dense
 from .basic import Softmax
 
-# regularization
-from .regularization import Dropout
+# bidirectional
+from .bidirectional import Bidirectional
 
 # convolution
 from .convolution import Convolution
+
+# convolution for nlp
+from .convolution_for_nlp import NLPConvPooling
+
+# embedding
+from .embedding import Embedding
+
 
 # pooling
 from .pooling import Pooling
@@ -24,9 +34,8 @@ from .recurrent import LSTM
 from .recurrent import GRU
 from .recurrent import PLSTM
 from .recurrent import CLSTM
-
-# bidirectional
-from .bidirectional import Bidirectional
+# regularization
+from .regularization import Dropout
 
 # other
 from .shape import Flatten
@@ -34,6 +43,6 @@ from .shape import Reshape
 from .shape import Mean
 from .shape import Dimshuffle
 
-# embedding
-from .embedding import Embedding
+# wrapper
+from .wrapper import MultiInput
 
