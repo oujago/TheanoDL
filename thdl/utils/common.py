@@ -108,6 +108,15 @@ def is_iterable(obj):
         return False
 
 
+def type(obj):
+    """Get the type of given object.
+    
+    :param obj: Any object.
+    :return: an :class:`str`.
+    """
+
+    return obj.__class__.__name__
+
 
 if __name__ == '__main__':
     a = {'a': 1, "b": {'c': 3, 'd': {"e": 5}}}

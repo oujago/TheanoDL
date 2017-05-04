@@ -9,6 +9,7 @@ from . import math
 from . import random
 from .common import dict_to_str
 from .common import is_iterable
+from .common import type
 
 # common.py
 from .common import now
