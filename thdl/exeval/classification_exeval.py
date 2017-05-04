@@ -354,6 +354,11 @@ class ClassifyExeEval(AbstractExeEval):
                 predictions.append(res[0])
                 gpu_metric_outputs.append(list(res[1:]))
 
+        return gpu_metric_outputs, predictions
+
+    def __execution_and_evaluate(self, x_data, y_data, func_to_exe):
+        gpu_metric_outputs, predictions = self._execution(x_data, y_data, func_to_exe)
+
         # cpu metrics evaluation
         if self.cpu_metrics:
             predictions = np.concatenate(predictions, axis=0)
@@ -369,7 +374,7 @@ class ClassifyExeEval(AbstractExeEval):
         return confusion_mat, evaluation_mat, gpu_metric_outputs
 
     def epoch_train_execution(self, history_name, model, all_xs, all_ys):
-        confusion_mat, evaluation_mat, gpu_metric_outputs = self._execution(
+        confusion_mat, evaluation_mat, gpu_metric_outputs = self.__execution_and_evaluate(
             all_xs, all_ys, model.train_func_for_eval)
 
         if 'training' in self.aspects:
@@ -377,7 +382,7 @@ class ClassifyExeEval(AbstractExeEval):
 
     def epoch_predict_execution(self, history_name, model, all_xs, all_ys, aspect):
         if aspect in self.aspects:
-            confusion_mat, evaluation_mat, gpu_metric_outputs = self._execution(
+            confusion_mat, evaluation_mat, gpu_metric_outputs = self.__execution_and_evaluate(
                 all_xs, all_ys, model.predict_func_for_eval)
             self.add_history(history_name, aspect, gpu_metric_outputs, confusion_mat, evaluation_mat)
 

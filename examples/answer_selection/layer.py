@@ -9,10 +9,10 @@ from thdl.model.layers import Layer
 class ASLayer(Layer):
     def __init__(self, embedding_layer=None, q1_conv_layer=None, q2_conv_layer=None):
         self.embedding_layer = embedding_layer
-        self.q1_conv_layer = q1_conv_layer
-        self.q2_conv_layer = q2_conv_layer
         self.q1_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
         self.q2_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
+        self.q1_conv_layer = q1_conv_layer
+        self.q2_conv_layer = q2_conv_layer
 
     def forward(self, inputs, **kwargs):
         q1_embed = self.embedding_layer.forward(inputs[0])

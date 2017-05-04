@@ -41,7 +41,7 @@ class Embedding(Layer):
                 zero_idxs = [zero_idxs]
             assert is_iterable(zero_idxs)
             for idx in zero_idxs:
-                embed_words[idx] = 0.
+                embed_words[idx, :] = 0.
         self.zero_idxs = zero_idxs
 
         self.embed_words = shared(embed_words, name='embedding_words')

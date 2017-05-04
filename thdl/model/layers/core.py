@@ -12,7 +12,7 @@ from ..initialization import _zero
 
 class Dense(Layer):
     def __init__(self, n_in, n_out, activation=Tanh(), init=GlorotUniform(),
-                 W_regularizer=None, b_regularizer=None, bias=None):
+                 W_regularizer=None, b_regularizer=None, bias=True):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
