@@ -46,7 +46,6 @@ class Embedding(Layer):
 
         self.embed_words = shared(embed_words, name='embedding_words')
 
-
     def forward(self, input, **kwargs):
         assert input.ndim == 2
 

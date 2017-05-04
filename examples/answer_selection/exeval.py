@@ -16,7 +16,6 @@ class AnswerSelectionExe(ClassifyExeEval):
 
     def _execution(self, x_data, y_data, func_to_exe):
         # variable
-        total_len = x_data.shape[0]
         nb_batches = len(y_data) // self.batch_size
         gpu_metric_outputs = []
         predictions = []

@@ -6,6 +6,7 @@ import pickle
 
 import numpy as np
 
+from thdl.utils.random import get_dtype
 from thdl.data.base import Data
 
 _UNKNOWN = "UNKNOWN_VOCAB"
@@ -98,7 +99,7 @@ class AnswerSelectionData(Data):
                 if self.total_len > 0:
                     idx_all_ys = idx_all_ys[:self.total_len]
 
-            self.all_ys = np.zeros((idx_all_ys.shape[0], 2))
+            self.all_ys = np.zeros((idx_all_ys.shape[0], 2), dtype=get_dtype())
             for i in range(2):
                 self.all_ys[idx_all_ys == i, i] = 1
 
@@ -126,7 +127,7 @@ class AnswerSelectionData(Data):
         self.index_to_tag = self.get_index_to_tag()
 
     def get_index_to_tag(self):
-        return "Different", "Similar"
+        return ["Different", "Similar"]
 
     def get_train_data(self):
         return self.all_xs[self._train_start: self._train_end], \
