@@ -85,14 +85,10 @@ class NLPConvPooling(Layer):
 
     @property
     def params(self):
-        if self.bias:
-            params = []
-            for conv in self.all_convs:
-                params += conv.params
-            return params
-
-        else:
-            return [conv.params for conv in self.all_convs]
+        params = []
+        for conv in self.all_convs:
+            params.extend(conv.params)
+        return params
 
     @property
     def regularizers(self):

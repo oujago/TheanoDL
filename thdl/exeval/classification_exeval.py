@@ -134,7 +134,7 @@ class ClassifyExeEval(AbstractExeEval):
     def dock_index_to_tag(self, index_to_tags):
         self.index_to_tag = index_to_tags
         self._cpu_metric_indexes = {'micro': (-1, 0)}
-        for i, tag in enumerate(index_to_tags + ['macro', 'micro']):
+        for i, tag in enumerate(list(index_to_tags) + ['macro', 'micro']):
             self._cpu_metric_indexes['%s_acc' % tag] = (i, 0)
             self._cpu_metric_indexes['%s_recall' % tag] = (i, 1)
             self._cpu_metric_indexes['%s_f1' % tag] = (i, 2)

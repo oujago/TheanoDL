@@ -7,8 +7,12 @@ from thdl.exeval import ClassifyExeEval
 
 
 class AnswerSelectionExe(ClassifyExeEval):
-    def __init__(self, batch_size, **kwargs):
+    def __init__(self, batch_size, convert_func=None, **kwargs):
         super(AnswerSelectionExe, self).__init__(batch_size, **kwargs)
+        self.convert_func = convert_func
+
+    def dock_convert_func(self, convert_func):
+        self.convert_func = convert_func
 
     def _execution(self, x_data, y_data, func_to_exe):
         # variable
@@ -18,9 +22,10 @@ class AnswerSelectionExe(ClassifyExeEval):
         predictions = []
 
         # execution
-        i = 0
         for i in range(nb_batches):
             xs = x_data[self.batch_size * i: self.batch_size * (i + 1)]
+            xs = self.convert_func(xs)
+
             ys = y_data[self.batch_size * i: self.batch_size * (i + 1)]
             res = func_to_exe(xs[0], xs[1], ys)
 
@@ -62,3 +67,13 @@ class AnswerSelectionExe(ClassifyExeEval):
 
     def exe_predict(self, model, all_xs, all_ys):
         return self._exe(model.predict, all_xs, all_ys)
+
+    def to_json(self):
+        config = {
+            "batch_size": self.batch_size,
+            "convert_func": self.convert_func,
+        }
+        config.update(super(AnswerSelectionExe, self).to_json())
+        return config
+
+

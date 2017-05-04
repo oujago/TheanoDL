@@ -14,22 +14,6 @@ class ASLayer(Layer):
         self.q1_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
         self.q2_dimshufle = thdl.model.layers.Dimshuffle((0, 'x', 1, 2))
 
-    # def connect_to(self, pre_layer=None):
-    #     # connect to
-    #     self.embedding_layer.connect_to(pre_layer)
-    #
-    #     self.q1_dimshufle.connect_to(self.embedding_layer)
-    #     self.q2_dimshufle.connect_to(self.embedding_layer)
-    #
-    #     self.q1_conv_layer.connect_to(self.q1_dimshufle)
-    #     self.q2_conv_layer.connect_to(self.q2_dimshufle)
-    #
-    #     # output shape
-    #     assert self.q1_conv_layer.output_shape[0] == self.q2_conv_layer.output_shape[0]
-    #     nb_batch = self.q1_conv_layer.output_shape[0]
-    #     length = self.q1_conv_layer.output_shape[1] + self.q2_conv_layer.output_shape[1]
-    #     self.output_shape = (nb_batch, length)
-
     def forward(self, inputs, **kwargs):
         q1_embed = self.embedding_layer.forward(inputs[0])
         q1_embed_shuffle = self.q1_dimshufle.forward(q1_embed)
