@@ -2,8 +2,10 @@
 
 import numpy as np
 
-from thdl.utils import random
+from thdl.utils.random import get_rng
+from thdl.utils import type
 from .abstract import AbstractData
+import random
 
 
 class Data(AbstractData):
@@ -21,7 +23,7 @@ class Data(AbstractData):
         self.index_to_tag = index_to_tag
 
         if shuffle_seed is None:
-            shuffle_seed = random.get_rng().randint(1000, 1000000)
+            shuffle_seed = get_rng().randint(1000, 1000000)
         self.shuffle_rng = np.random.RandomState(seed=shuffle_seed)
 
     def to_json(self):
@@ -39,8 +41,16 @@ class Data(AbstractData):
 
     def shuffle_data(self, xs, ys):
         if self.shuffle:
-            s = self.shuffle_rng.randint(1000, 9999999999)
-            np.random.seed(s)  # definitely important
-            np.random.shuffle(xs)
-            np.random.seed(s)  # definitely important
-            np.random.shuffle(ys)
+            s = self.shuffle_rng.randint(1000, 100000000)
+            if type(xs) == 'list':
+                random.seed(s)
+                random.shuffle(xs)
+                random.seed(s)
+                random.shuffle(ys)
+            elif type(xs) == 'ndarray':
+                np.random.seed(s)  # definitely important
+                np.random.shuffle(xs)
+                np.random.seed(s)  # definitely important
+                np.random.shuffle(ys)
+            else:
+                raise ValueError

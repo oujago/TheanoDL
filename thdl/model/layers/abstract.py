@@ -5,9 +5,10 @@ from thdl.base import ThdlObj
 
 
 class AbstractLayer(ThdlObj):
-    output_shape = None
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError
 
-    def connect_to(self, pre_layer=None):
+    def __str__(self):
         raise NotImplementedError
 
     def forward(self, input, **kwargs):
@@ -18,12 +19,15 @@ class AbstractLayer(ThdlObj):
 
     @property
     def params(self):
-        return []
+        raise NotImplementedError
 
     @property
     def regularizers(self):
-        return []
+        raise NotImplementedError
 
     @property
     def updates(self):
-        return []
+        raise NotImplementedError
+
+
+

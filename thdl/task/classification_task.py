@@ -81,8 +81,8 @@ class ClassificationTask(BaseTask):
             # validation
             self.exeval.epoch_predict_execution(history_name, self.model, valid_xs, valid_ys, 'valid')
 
-            # tests
-            self.exeval.epoch_predict_execution(history_name, self.model, test_xs, test_ys, 'tests')
+            # test
+            self.exeval.epoch_predict_execution(history_name, self.model, test_xs, test_ys, 'test')
 
             # epoch evaluation
             self.exeval.output_epoch_evaluation(history_name, epoch, file=self.logfile)

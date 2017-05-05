@@ -30,6 +30,13 @@ class Network(BaseNetwork):
         if input_tensor:
             if isinstance(input_tensor, tensor.TensorVariable):
                 self.input_tensor = input_tensor
+
+            elif is_iterable(input_tensor):
+                if isinstance(input_tensor[0], tensor.TensorVariable):
+                    self.input_tensor = input_tensor
+                else:
+                    self.input_tensor = [get_tensor(t) for t in input_tensor]
+
             else:
                 self.input_tensor = get_tensor(input_tensor)
         else:
@@ -40,20 +47,13 @@ class Network(BaseNetwork):
         self.comp_layers.append(layer)
         self._check_train_test_split(layer)
 
-    def build(self, loss=CategoricalCrossEntropy(), optimizer=SGD(), **kwargs):
-
-        self.comp_objective = loss
-        self.comp_optimizer = optimizer
+    def build(self, **kwargs):
+        assert self.comp_objective is not None
+        assert self.comp_optimizer is not None
 
         # random seed
         if self.seed:
             set_seed(self.seed)
-
-        # connect to
-        pre_layer = None
-        for layer in self.comp_layers:
-            layer.connect_to(pre_layer)
-            pre_layer = layer
 
         # forward
         train_prob_ys, train_ys, train_loss = self._forward(True)
@@ -67,8 +67,9 @@ class Network(BaseNetwork):
         for layer in self.comp_layers:
             regularizers.extend(layer.regularizers)
         regularizer_loss = tensor.cast(tensor.sum(regularizers), get_dtype())
-        # loss
-        losses = regularizer_loss + train_loss
+
+        # total loss
+        total_train_losses = regularizer_loss + train_loss
 
         # params
         params = []
@@ -81,22 +82,24 @@ class Network(BaseNetwork):
             layer_updates.update(layer.updates)
 
         # model updates
-        updates = self.comp_optimizer(params, losses)
+        updates = self.comp_optimizer(params, total_train_losses)
         updates.update(layer_updates)
 
-        # train functions
+        # inputs
         if is_iterable(self.input_tensor):
-            inputs = self.input_tensor + [self.output_tensor]
+            inputs = list(self.input_tensor) + [self.output_tensor]
         else:
             inputs = [self.input_tensor, self.output_tensor]
         train_outputs = [train_ys, ]
+
+        # train functions
         for metric in self.train_metrics:
             if isinstance(metric, metrics.Regularizer):
                 train_outputs.append(regularizer_loss)
             elif isinstance(metric, metrics.Loss):
                 train_outputs.append(train_loss)
             elif isinstance(metric, metrics.TotalLoss):
-                train_outputs.append(losses)
+                train_outputs.append(total_train_losses)
             else:
                 train_outputs.append(metric(train_prob_ys, self.output_tensor))
         self.train_func_for_eval = function(inputs=inputs,
@@ -104,10 +107,6 @@ class Network(BaseNetwork):
                                             updates=updates)
 
         # test functions
-        if is_iterable(self.input_tensor):
-            inputs = self.input_tensor + [self.output_tensor]
-        else:
-            inputs = [self.input_tensor, self.output_tensor]
         test_outputs = [predict_ys, ]
         for metric in self.predict_metrics:
             if isinstance(metric, metrics.Loss):
@@ -135,14 +134,14 @@ class Network(BaseNetwork):
         # layer component
         layer_json = OrderedDict()
         for layer in self.comp_layers:
-            layer_json[layer.__class__.__name__] = layer.to_json()
+            layer_json[str(layer)] = layer.to_json()
 
         # loss component
-        loss_json = self.comp_objective.__class__.__name__
+        loss_json = str(self.comp_objective)
 
         # optimizer component
         optimizer_json = {
-            self.comp_optimizer.__class__.__name__: self.comp_optimizer.to_json()
+            str(self.comp_optimizer): self.comp_optimizer.to_json()
         }
 
         # configuration
@@ -168,6 +167,3 @@ class MultiInNetwork(Network):
             self.input_tensors = input_tensors[0]
         else:
             self.input_tensors = input_tensors
-
-
-

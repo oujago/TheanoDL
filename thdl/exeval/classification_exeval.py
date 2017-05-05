@@ -14,6 +14,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
+_METRICS = ['macro_acc', 'macro_recall', 'macro_f1',
+                          'micro_acc', 'micro_recall', 'micro_f1',
+                          'micro']
+
 class ClassifyExeEval(AbstractExeEval):
     def __init__(self, batch_size, epochs=50):
         """
@@ -134,7 +138,7 @@ class ClassifyExeEval(AbstractExeEval):
     def dock_index_to_tag(self, index_to_tags):
         self.index_to_tag = index_to_tags
         self._cpu_metric_indexes = {'micro': (-1, 0)}
-        for i, tag in enumerate(index_to_tags + ['macro', 'micro']):
+        for i, tag in enumerate(list(index_to_tags) + ['macro', 'micro']):
             self._cpu_metric_indexes['%s_acc' % tag] = (i, 0)
             self._cpu_metric_indexes['%s_recall' % tag] = (i, 1)
             self._cpu_metric_indexes['%s_f1' % tag] = (i, 2)
@@ -148,9 +152,7 @@ class ClassifyExeEval(AbstractExeEval):
     def set_cpu_metrics(self, *args):
         cpu_metrics = set([])
         for metric in args:
-            if metric in ['macro_acc', 'macro_recall', 'macro_f1',
-                          'micro_acc', 'micro_recall', 'micro_f1',
-                          'micro']:
+            if metric in _METRICS:
                 cpu_metrics.add(metric)
             else:
                 raise ValueError
@@ -164,6 +166,9 @@ class ClassifyExeEval(AbstractExeEval):
             args = args[0]
         else:
             assert type(args[0]).__name__ == 'str'
+        for arg in args:
+            assert arg in _METRICS
+
         self.model_chosen_metrics = args
 
     def to_json(self):
@@ -354,6 +359,11 @@ class ClassifyExeEval(AbstractExeEval):
                 predictions.append(res[0])
                 gpu_metric_outputs.append(list(res[1:]))
 
+        return gpu_metric_outputs, predictions
+
+    def __execution_and_evaluate(self, x_data, y_data, func_to_exe):
+        gpu_metric_outputs, predictions = self._execution(x_data, y_data, func_to_exe)
+
         # cpu metrics evaluation
         if self.cpu_metrics:
             predictions = np.concatenate(predictions, axis=0)
@@ -369,7 +379,7 @@ class ClassifyExeEval(AbstractExeEval):
         return confusion_mat, evaluation_mat, gpu_metric_outputs
 
     def epoch_train_execution(self, history_name, model, all_xs, all_ys):
-        confusion_mat, evaluation_mat, gpu_metric_outputs = self._execution(
+        confusion_mat, evaluation_mat, gpu_metric_outputs = self.__execution_and_evaluate(
             all_xs, all_ys, model.train_func_for_eval)
 
         if 'training' in self.aspects:
@@ -377,7 +387,7 @@ class ClassifyExeEval(AbstractExeEval):
 
     def epoch_predict_execution(self, history_name, model, all_xs, all_ys, aspect):
         if aspect in self.aspects:
-            confusion_mat, evaluation_mat, gpu_metric_outputs = self._execution(
+            confusion_mat, evaluation_mat, gpu_metric_outputs = self.__execution_and_evaluate(
                 all_xs, all_ys, model.predict_func_for_eval)
             self.add_history(history_name, aspect, gpu_metric_outputs, confusion_mat, evaluation_mat)
 

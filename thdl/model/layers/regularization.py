@@ -22,13 +22,6 @@ class Dropout(Layer):
             seed = get_rng().randint(1, 2147462579)
         self.srng = RandomStreams(seed)
 
-    def connect_to(self, pre_layer=None):
-        if pre_layer:
-            self.output_shape = pre_layer.output_shape
-        else:
-            assert self.input_shape is not None
-            self.output_shape = self.input_shape
-
     def forward(self, input, train=True):
         """
         :param input: a symbolic tensor of shape (n_examples, n_in)

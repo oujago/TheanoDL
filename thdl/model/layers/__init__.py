@@ -3,15 +3,18 @@
 # abstract
 from .abstract import AbstractLayer
 
+# attention
+
+from .attention import Attention
+
+
 # base
 from .base import Layer
 
 # basic
-from .basic import Dense
-from .basic import Softmax
+from .core import Dense
+from .core import Softmax
 
-# bidirectional
-from .bidirectional import Bidirectional
 
 # convolution
 from .convolution import Convolution
@@ -34,6 +37,7 @@ from .recurrent import LSTM
 from .recurrent import GRU
 from .recurrent import PLSTM
 from .recurrent import CLSTM
+
 # regularization
 from .regularization import Dropout
 
@@ -42,7 +46,9 @@ from .shape import Flatten
 from .shape import Reshape
 from .shape import Mean
 from .shape import Dimshuffle
+from .shape import Concatenate
 
 # wrapper
+from .wrapper import Bidirectional
 from .wrapper import MultiInput
 
