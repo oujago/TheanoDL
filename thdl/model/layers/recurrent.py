@@ -184,7 +184,6 @@ class GRU(GatedRecurrent):
         super(GRU, self).__init__(**kwargs)
 
         # variables
-        self.h0 = None
         self.r_x2h_W, self.r_h2h_W, self.r_h_b, \
         self.z_x2h_W, self.z_h2h_W, self.z_h_b, \
         self.c_x2h_W, self.c_h2h_W, self.c_h_b = \

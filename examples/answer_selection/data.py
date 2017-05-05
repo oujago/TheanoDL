@@ -14,8 +14,9 @@ _ZERO = 'ZERO_VOCAB'
 
 
 class AnswerSelectionData(Data):
-    def __init__(self, xs_path, ys_path, maxlen, vocab_path=None, threshold=None,
-                 valid_split=0.1, test_split=0.1, total_len = -1,
+    def __init__(self, xs_path, ys_path, maxlen, vocab_path, threshold=None,
+                 valid_split=0.1, test_split=0.1, total_len = -1, prefix=None,
+                 batch_size = 40,
                  **kwargs):
         super(AnswerSelectionData, self).__init__(**kwargs)
 
@@ -27,6 +28,8 @@ class AnswerSelectionData(Data):
         self.valid_split = valid_split
         self.test_split = test_split
         self.total_len = total_len
+        self.prefix = prefix
+        self.batch_size= batch_size
 
     def to_json(self):
         config = {
@@ -35,40 +38,25 @@ class AnswerSelectionData(Data):
             "maxlen": self.maxlen,
             "vocab_path": self.vocab_path,
             "threshold": self.threshold,
+            "prefix": self.prefix,
+            "batch_size": self.batch_size,
         }
         return config
 
     def build(self):
         # load vocabulary
-        if self.vocab_path is None:
-            print("Building vocabulary ...")
-            vocab_path = './f_data/vocab_thre-{}.pkl'.format(self.threshold)
+        with open(self.vocab_path, 'rb') as fin:
+            vocabs_freqs = pickle.load(fin)
+        threshold = 1 if self.threshold is None else self.threshold
 
-            if os.path.exists(vocab_path):
-                with open(vocab_path, 'rb') as fin:
-                    self.idx_to_vocab, self.vocab_to_idx = pickle.load(fin)
-            else:
-                threshold = 1 if self.threshold is None else self.threshold
+        sorted_vocab = [word for word, freq in sorted(vocabs_freqs.items()) if freq >= threshold]
+        sorted_vocab.append(_UNKNOWN)
+        sorted_vocab.append(_ZERO)
+        self.idx_to_vocab = {i: vocab for i, vocab in enumerate(sorted_vocab)}
+        self.vocab_to_idx = {vocab: i for i, vocab in enumerate(sorted_vocab)}
 
-                freq_vocab = {}
-                with open(os.path.join(os.getcwd(), self.xs_path), encoding='utf-8') as fin:
-                    for line in fin:
-                        sentences = line.strip().split()
-                        for word in sentences:
-                            freq_vocab[word] = freq_vocab.get(word, 0) + 1
-                sorted_vocab = [word for word, freq in sorted(freq_vocab.items()) if freq >= threshold]
-                sorted_vocab.append(_UNKNOWN)
-                sorted_vocab.append(_ZERO)
-                self.idx_to_vocab = {i: vocab for i, vocab in enumerate(sorted_vocab)}
-                self.vocab_to_idx = {vocab: i for i, vocab in enumerate(sorted_vocab)}
-                with open(vocab_path, 'wb') as fin:
-                    pickle.dump([self.idx_to_vocab, self.vocab_to_idx], fin)
-        else:
-            with open(os.path.join(os.getcwd(), self.vocab_path), 'rb') as fin:
-                self.idx_to_vocab, self.vocab_to_idx = pickle.load(fin)
-
-        pkl_path = "./f_data/thre-{}-valid-{}-test-{}-total-{}.pkl".format(
-            self.threshold, self.valid_split, self.test_split, self.total_len)
+        pkl_path = "./f_data/prefix-{}-thre-{}-valid-{}-test-{}-total-{}.pkl".format(
+            self.prefix, self.threshold, self.valid_split, self.test_split, self.total_len)
         print("Building data ...")
 
         if os.path.exists(pkl_path):
@@ -80,24 +68,29 @@ class AnswerSelectionData(Data):
         else:
             # load xs in index
             all_xs = []
+            remove_idxs = []
             with open(os.path.join(os.getcwd(), self.xs_path), encoding='utf-8') as fin:
                 i = 0
                 for line in fin:
-                    sentences = line.strip().split("\t")
-                    pair_idxs = [sent.strip().split() for sent in sentences]
-                    all_xs.append(pair_idxs)
-
-                    i += 1
-                    if i == self.total_len:
-                        break
-
+                    sentences = [sent.strip().split() for sent in line.strip().split("\t")]
+                    if len(sentences) != 2:
+                        print("Not A Pair: {}".format(line))
+                        remove_idxs.append(i)
+                    else:
+                        all_xs.append(sentences)
+                        i += 1
+                        if i == self.total_len:
+                            break
             self.all_xs = all_xs
 
             # load ys
             with open(os.path.join(os.getcwd(), self.ys_path), 'rb') as fin:
-                idx_all_ys = np.asarray(pickle.load(fin), dtype='int32')
+                idx_all_ys = pickle.load(fin)
                 if self.total_len > 0:
                     idx_all_ys = idx_all_ys[:self.total_len]
+                for i in remove_idxs:
+                    idx_all_ys.pop(i)
+                idx_all_ys = np.asarray(idx_all_ys, dtype='int32')
 
             self.all_ys = np.zeros((idx_all_ys.shape[0], 2), dtype=get_dtype())
             for i in range(2):
@@ -124,27 +117,42 @@ class AnswerSelectionData(Data):
                                  self._valid_start, self._valid_end,
                                  self._test_start, self._test_end]
                 pickle.dump(dump_contents, fin)
+
+        assert len(self.all_xs) == len(self.all_ys)
         self.index_to_tag = self.get_index_to_tag()
 
     def get_index_to_tag(self):
         return ["Different", "Similar"]
 
+    def _get_data(self, start, end):
+        xs = self.all_xs[start: end]
+        ys = self.all_ys[start: end]
+
+        epochs = len(xs) // self.batch_size
+        length = self.batch_size * epochs
+
+        return xs[:length], ys[:length]
+
     def get_train_data(self):
-        return self.all_xs[self._train_start: self._train_end], \
-               self.all_ys[self._train_start: self._train_end]
+        return self._get_data(self._train_start, self._train_end)
+
 
     def get_valid_data(self):
-        return self.all_xs[self._valid_start: self._valid_end], \
-               self.all_ys[self._valid_start: self._valid_end]
+        return self._get_data(self._valid_start, self._valid_end)
 
     def get_test_data(self):
-        return self.all_xs[self._test_start: self._test_end], \
-               self.all_ys[self._test_start: self._test_end]
+        return self._get_data(self._test_start, self._test_end)
 
     def batch_pairs_to_idxs(self, pairs):
+        error = 0
+
         all_pairs_idxs = []
         for pair in pairs:
             a_pair_idxs = []
+            if len(pair) != 2:
+                print("Not A Pair: {}".format(str(pair)))
+                pair.append([])
+
             for sent in pair:
                 # get idxs
                 sent_idxs = [self.vocab_to_idx.get(w, -2) for w in sent]
@@ -156,7 +164,18 @@ class AnswerSelectionData(Data):
                 else:
                     # truncate
                     sent_idxs= sent_idxs[:self.maxlen]
+
+                assert len(sent_idxs) == self.maxlen
                 a_pair_idxs.append(sent_idxs)
+
+            assert len(a_pair_idxs) == 2
             all_pairs_idxs.append(a_pair_idxs)
-        return np.asarray(all_pairs_idxs, dtype='int32')
+
+
+        try:
+            all_pairs_idxs = np.asarray(all_pairs_idxs, dtype='int32')
+            return all_pairs_idxs
+        except ValueError:
+            print(all_pairs_idxs)
+            raise ValueError
 

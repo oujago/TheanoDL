@@ -14,6 +14,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
+_METRICS = ['macro_acc', 'macro_recall', 'macro_f1',
+                          'micro_acc', 'micro_recall', 'micro_f1',
+                          'micro']
+
 class ClassifyExeEval(AbstractExeEval):
     def __init__(self, batch_size, epochs=50):
         """
@@ -148,9 +152,7 @@ class ClassifyExeEval(AbstractExeEval):
     def set_cpu_metrics(self, *args):
         cpu_metrics = set([])
         for metric in args:
-            if metric in ['macro_acc', 'macro_recall', 'macro_f1',
-                          'micro_acc', 'micro_recall', 'micro_f1',
-                          'micro']:
+            if metric in _METRICS:
                 cpu_metrics.add(metric)
             else:
                 raise ValueError
@@ -164,6 +166,9 @@ class ClassifyExeEval(AbstractExeEval):
             args = args[0]
         else:
             assert type(args[0]).__name__ == 'str'
+        for arg in args:
+            assert arg in _METRICS
+
         self.model_chosen_metrics = args
 
     def to_json(self):

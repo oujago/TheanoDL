@@ -75,6 +75,5 @@ class Embedding(Layer):
         if self.static is False:
             zero_vec = _zero((self.n_out, ))
             for idx in self.zero_idxs:
-            # zero_mat = _zero((len(self.zero_idxs), self.n_out))
                 ups[self.embed_words] = tensor.set_subtensor(self.embed_words[idx], zero_vec)
         return ups

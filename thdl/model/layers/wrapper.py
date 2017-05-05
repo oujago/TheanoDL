@@ -4,28 +4,37 @@
 from theano import tensor
 
 from .base import Layer
-from .base import Layer
 from thdl.utils import is_iterable
 
 
 class MultiInput(Layer):
     def __init__(self, *layers):
-        raise ValueError
-        self.layers = layers if layers else []
+        if len(layers) == 0:
+            self.layers = []
+        else:
+            self.layers = list(layers)
 
     def add(self, layer):
         self.layers.append(layer)
 
-    def connect_to(self, pre_layer=None):
-        for layer in self.layers:
-            layer.connect_to()
+    def forward(self, inputs, **kwargs):
+        outs = []
+        assert len(inputs) > 1
+        if len(inputs) == len(self.layers):
+            for i in range(len(self.layers)):
+                outs.append(self.layers[i].forward(inputs[0]))
+        elif len(self.layers) == 1:
+            for input in inputs:
+                outs.append(self.layers[0].forward(input))
+        else:
+            raise ValueError("Length do not match.")
+        return outs
 
     def to_json(self):
         config = {}
         for i in range(len(self.layers)):
             config["layer-{}".format(i)] = self.layers[i].to_json()
         return config
-
 
     @property
     def params(self):
